@@ -1,1 +1,1 @@
-web: node tests/0-start-server.mjs
+web: node tests/1-simple-server.mjs
