@@ -1,0 +1,13 @@
+name: remote-mcp-server-demo
+services:
+  - name: web
+    github:
+      branch: main
+      deploy_on_push: true
+    run_command: node ./tests/0-start-server.js
+    envs:
+      - key: NODE_ENV
+        value: development
+    http_port: 3000
+    routes:
+      - path: /

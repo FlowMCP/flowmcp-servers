@@ -1,0 +1,19 @@
+{
+  "name": "6-remote-mcp-server-demo",
+  "version": "1.0.0",
+  "main": "./src/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "flowmcp": "github:flowmcp/flowmcp#483cb1e25c626ed135d8b336be6412cb7a083170"
+  }
+}
