@@ -1,0 +1,1 @@
+web: node tests/0-start-server.mjs
