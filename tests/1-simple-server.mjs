@@ -22,6 +22,7 @@ const schemas = [
 ]
 
 
+/*
 function authenticate( req, res, next ) {
     const authHeader = req.headers.authorization
     if (!authHeader || !authHeader.startsWith( 'Bearer ' ) ) {
@@ -39,7 +40,7 @@ function authenticate( req, res, next ) {
     }
     next()
 }
-
+*/
 
 
 const app = express()
@@ -56,7 +57,7 @@ schemas
         FlowMCP.activateServerTools( { server, schema, serverParams, activateTags, silent } )
     } )
 
-app.get( '/sse', authenticate, (req, res) => {
+app.get( '/sse', /*authenticate,*/ (req, res) => {
     res.setHeader( 'Content-Type', 'text/event-stream' )
     res.setHeader( 'Cache-Control', 'no-cache' )
     res.setHeader( 'Connection', 'keep-alive' )
