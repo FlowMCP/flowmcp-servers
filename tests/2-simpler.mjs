@@ -82,6 +82,6 @@ const handleSessionRequest = async (req, res) => {
 app.get('/mcp', handleSessionRequest);
 app.delete('/mcp', handleSessionRequest);
 
-app.listen(3000, () => {
-  console.log("MCP server is running on port 3000");
+app.listen(8080, () => {
+  console.log("MCP server is running on port http://localhost:8080");
 });
