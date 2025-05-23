@@ -8,6 +8,6 @@ services:
     envs:
       - key: NODE_ENV
         value: development
-    http_port: 3000
+    http_port: 8080
     routes:
       - path: /
