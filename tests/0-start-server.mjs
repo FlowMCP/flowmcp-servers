@@ -1,7 +1,7 @@
 import { RemoteMcpServer } from "../src/index.mjs"
 
 const config = {
-    'port': 3000,
+    'port': 8080,
     'bearerToken': 'password123',
     'routes': [
         {
