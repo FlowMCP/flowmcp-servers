@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "run": "node ./tests/0-start-server.mjs"
+    "start": "node ./tests/0-start-server.mjs"
   },
   "keywords": [],
   "author": "",
