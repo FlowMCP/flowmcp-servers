@@ -62,7 +62,7 @@ app.get( '/sse', /*authenticate,*/ (req, res) => {
     res.setHeader( 'Cache-Control', 'no-cache' )
     res.setHeader( 'Connection', 'keep-alive' )
 
-    res.write( `data: ${JSON.stringify( { 'message': 'Connected to SSE endpoint' } ) }\n\n` )
+    res.write( `data: ${JSON.stringify( { 'message': 'Connected to SSE endpoint' } )}\n\n` )
 
     const clientId = Date.now()
     const newClient = { id: clientId, response: res }
