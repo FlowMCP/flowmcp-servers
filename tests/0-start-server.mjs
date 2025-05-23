@@ -34,7 +34,7 @@ const config = {
 
 const { port, bearerToken } = config
 
-const server = new RemoteMcpServer( port )
+const server = new RemoteMcpServer( { port } )
 server.addAuthentication( bearerToken )
 config['routes']
     .forEach( ( { path, handler} ) => {
