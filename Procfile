@@ -1,1 +1,1 @@
-web: node tests/2-simpler.mjs
+web: node tests/4-simpler-sse.mjs

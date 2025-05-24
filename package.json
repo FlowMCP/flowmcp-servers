@@ -8,7 +8,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node ./tests/2-simpler.mjs",
-    "inspector": "npx @modelcontextprotocol/inspector node tests/2-simpler.mjs"
+    "inspector": "npx @modelcontextprotocol/inspector node tests/3-simpler-plus-see.mjs"
   },
   "keywords": [],
   "author": "",
