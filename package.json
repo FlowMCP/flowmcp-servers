@@ -7,14 +7,17 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./tests/2-simpler.mjs"
+    "start": "node ./tests/2-simpler.mjs",
+    "inspector": "npx @modelcontextprotocol/inspector node tests/2-simpler.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@modelcontextprotocol/inspector": "^0.13.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "flowmcp": "github:flowmcp/flowmcp#483cb1e25c626ed135d8b336be6412cb7a083170"
+    "flowmcp": "github:flowmcp/flowmcp#483cb1e25c626ed135d8b336be6412cb7a083170",
+    "zod": "^3.25.27"
   }
 }
