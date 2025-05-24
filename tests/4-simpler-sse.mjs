@@ -13,17 +13,21 @@ class MixedTransportServer {
     #port
     #transports
 
+
+
     constructor({ port = 3000 }) {
         this.#port = port
         this.#app = express()
         this.#app.use(express.json())
+
+
         this.#transports = {
             streamable: {},
             sse: {}
         }
     }
 
-    setRoutes({ path }) {
+    setRoutes({ path, schemas }) {
         const normalizedPath = path.startsWith('/') ? path : '/' + path
 
         // 🔹 SSE für Legacy-Clients
@@ -42,7 +46,7 @@ class MixedTransportServer {
             })
 
             try {
-                await this.#createAndConnectServer(transport)
+                await this.#createAndConnectServer( { transport, schemas } )
             } catch (err) {
                 console.error("❌ SSE error:", err)
                 if (!res.headersSent) res.status(500).send("SSE transport error")
@@ -67,8 +71,7 @@ class MixedTransportServer {
         })
     }
 
-
-    async #createAndConnectServer(transport) {
+    async #createAndConnectServer( { transport , schemas } ) {
         const server = new McpServer({ name: 'mixed-transport-server', version: '1.0.0' })
         schemas.forEach(({ schema, serverParams, activateTags }) => {
             FlowMCP.activateServerTools({ server, schema, serverParams, activateTags })
@@ -88,7 +91,7 @@ class MixedTransportServer {
 
 
 
-const remote = new MixedTransportServer({ port: 8080 })
+
 
 import { schema } from './../schemas/v1.2.0/poap/graphql.mjs' 
 const schemas = [
@@ -100,7 +103,8 @@ const schemas = [
 ]
 
 
-remote.setRoutes({ path: 'mcp' })
+const remote = new MixedTransportServer( { port: 8080 } )
+remote.setRoutes({ path: 'mcp', schemas })
 const serverInstance = remote.start()
 process.on('SIGINT', () => {
     serverInstance.close(() => {
