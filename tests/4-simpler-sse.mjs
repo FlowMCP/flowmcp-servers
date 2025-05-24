@@ -120,6 +120,13 @@ console.log( 'Request /sse', req.query, req.headers );
 const { _sessionId: sessionId } = transport
 
   try {
+    res.writeHead(200, {
+  'Content-Type': 'text/event-stream',
+  'Cache-Control': 'no-cache, no-transform',
+  'Connection': 'keep-alive',
+  'Transfer-Encoding': 'chunked',
+  'Access-Control-Allow-Origin': '*'
+});
     await mcpServer.connect(transport);
     sessions.set(sessionId, { transport, res });
   } catch (err) {
