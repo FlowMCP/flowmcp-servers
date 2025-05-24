@@ -1,98 +1,67 @@
-// server.mjs
-
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import { FlowMCP } from "flowmcp";
 
 
-const server = new McpServer({
-  name: "backwards-compatible-server",
-  version: "1.0.0"
-});
-
-import { schema } from './../schemas/v1.2.0/poap/graphql.mjs'
-const schemas = [
-    {
-        schema,
-        'serverParams': {},
-        'activateTags': [],
-    }
-]
-
-schemas
-    .forEach(( { serverParams, schema, activateTags } ) => {
-        FlowMCP.activateServerTools( { server, schema, serverParams, activateTags, silent: false } )
-    } )
-
-
-
-// Express App einrichten
 const app = express();
 app.use(express.json());
 
-// Transportspeicher für Session-Management
-const transports = {
-  streamable: /** @type {Record<string, StreamableHTTPServerTransport>} */ ({}),
-  sse: /** @type {Record<string, SSEServerTransport>} */ ({})
-};
-
-// Modernes Streamable HTTP-Endpunkt
-app.all('/mcp', async (req, res) => {
-  // Beispielhafte Session-ID – in der Praxis dynamisch generieren oder bereitstellen
-  const sessionId = req.query.sessionId || "default-session";
-
-  const transport = new StreamableHTTPServerTransport(req, res);
-  transports.streamable[sessionId] = transport;
-
-  res.on("close", () => {
-    delete transports.streamable[sessionId];
-  });
-
-  await server.connect(transport);
+const server = new McpServer({
+  name: "sse-session-server",
+  version: "1.0.0"
 });
 
-// Legacy SSE-Endpunkt
-app.get('/sse', async (req, res) => {
-  const transport = new SSEServerTransport('/messages', res);
-  transports.sse[transport.sessionId] = transport;
+// Speichert aktive Transports
+const transports = {};
+
+/**
+ * SSE-Endpunkt
+ * - erzeugt neuen Transport
+ * - registriert sessionId
+ * - sendet sessionId initial an den Client
+ */
+app.get("/sse", async (req, res) => {
+  const transport = new SSEServerTransport("/messages", res);
+  const sessionId = transport.sessionId;
+
+  // Registrieren
+  transports[sessionId] = transport;
 
   res.on("close", () => {
-    delete transports.sse[transport.sessionId];
+    delete transports[sessionId];
   });
 
-  // Warte, bis der MCP-Server den Transport gestartet hat (inkl. Header senden)
+  // Mit MCP-Server verbinden
   await server.connect(transport);
 
-  // Jetzt ist es sicher, Keep-Alive Nachrichten zu senden
-  const interval = setInterval(() => {
-    try {
-      res.write(`: keep-alive\n\n`);
-    } catch (err) {
-      clearInterval(interval);
-    }
+  // Session-ID an Client senden
+  res.write(`event: sessionId\n`);
+  res.write(`data: ${sessionId}\n\n`);
+
+  // Optional: Heartbeat
+  const heartbeat = setInterval(() => {
+    res.write(`: keep-alive\n\n`);
   }, 15000);
 
-  res.on("close", () => {
-    clearInterval(interval);
-  });
+  res.on("close", () => clearInterval(heartbeat));
 });
 
-
-// Legacy Nachrichten-Endpunkt
-app.post('/messages', async (req, res) => {
+/**
+ * Nachrichtenempfang
+ * - erfordert gültige sessionId
+ */
+app.post("/messages", async (req, res) => {
   const sessionId = req.query.sessionId;
-  const transport = transports.sse[sessionId];
+  const transport = transports[sessionId];
 
-  if (transport) {
-    await transport.handlePostMessage(req, res, req.body);
-  } else {
-    res.status(400).send('No transport found for sessionId');
+  if (!transport) {
+    return res.status(400).send("No transport found for sessionId");
   }
+
+  await transport.handlePostMessage(req, res, req.body);
 });
 
 // Server starten
 app.listen(8080, () => {
-  console.log("Server läuft auf Port 8080");
+  console.log("✅ SSE MCP-Server läuft auf Port 8080");
 });
