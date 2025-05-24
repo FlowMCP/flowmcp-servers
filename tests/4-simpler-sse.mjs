@@ -169,6 +169,7 @@ console.log( 'Request /sse/messages', req.body, req.query, req.headers );
   }
 });
 
+/*
 // CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -177,6 +178,16 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
+*/
+
+// Catch-all Logging Middleware
+app.use((req, res, next) => {
+  console.log(`Unbekannte Anfrage: ${req.method} ${req.originalUrl}`);
+  console.log('Headers:', req.headers);
+  console.log('Body:', req.body);
+  res.status(404).json({ error: 'Endpoint nicht gefunden' });
+});
+
 
 const PORT = 8080
 app.listen(PORT, () => {
