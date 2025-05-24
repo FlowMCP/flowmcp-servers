@@ -88,7 +88,7 @@ class MixedTransportServer {
 
 
 
-const remote = new MixedTransportServer({ port: 3001 })
+const remote = new MixedTransportServer({ port: 8080 })
 
 import { schema } from './../schemas/v1.2.0/poap/graphql.mjs' 
 const schemas = [
