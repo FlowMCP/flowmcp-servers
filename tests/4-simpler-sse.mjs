@@ -81,6 +81,10 @@ class MixedTransportServer {
             }
         })
 
+        this.#app.get(`${normalizedPath}/messages`, (req, res) => {
+            res.status(405).send('Use POST /messages?sessionId=... to send data.')
+        })
+
         this.#app.post(`${normalizedPath}/messages`, async (req, res) => {
             const sessionId = req.query.sessionId
             const entry = this.#transports.sse[sessionId]
