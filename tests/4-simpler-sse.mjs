@@ -6,74 +6,42 @@ const app = express();
 app.use(express.json());
 
 const server = new McpServer({
-  name: "sse-session-server",
+  name: "sse-single-client-server",
   version: "1.0.0"
 });
 
-// Aktive SSE-Verbindungen: sessionId → transport
-/** @type {Record<string, SSEServerTransport>} */
-const transports = {};
+let currentTransport = null;
 
-// SSE-Verbindung herstellen
 app.get("/sse", async (req, res) => {
-  try {
-    const transport = new SSEServerTransport("/messages", res);
-    const sessionId = transport.sessionId;
+  const transport = new SSEServerTransport("/messages", res);
+  currentTransport = transport;
 
-    transports[sessionId] = transport;
-    console.log(`🔌 Neue SSE-Verbindung: sessionId=${sessionId}`);
+  res.on("close", () => {
+    console.log("❌ Verbindung beendet");
+    currentTransport = null;
+    clearInterval(heartbeat);
+  });
 
-    res.on("close", () => {
-      console.log(`❌ Verbindung geschlossen: sessionId=${sessionId}`);
-      delete transports[sessionId];
+  await server.connect(transport);
+
+  // Heartbeat
+  const heartbeat = setInterval(() => {
+    try {
+      res.write(`: keep-alive\n\n`);
+    } catch (err) {
       clearInterval(heartbeat);
-    });
-
-    await server.connect(transport);
-
-    // Session-ID an Client senden
-    res.write(`event: sessionId\n`);
-    res.write(`data: ${sessionId}\n\n`);
-
-    // Heartbeat senden, um Verbindung offen zu halten
-    const heartbeat = setInterval(() => {
-      try {
-        res.write(`: keep-alive\n\n`);
-      } catch (err) {
-        console.warn(`⚠️ Heartbeat-Fehler für sessionId=${sessionId}: ${err.message}`);
-        clearInterval(heartbeat);
-      }
-    }, 15000);
-  } catch (err) {
-    console.error("❌ Fehler im /sse-Endpunkt:", err);
-    if (!res.headersSent) {
-      res.status(500).send("Interner Serverfehler im SSE-Endpunkt");
     }
-  }
+  }, 15000);
 });
 
-// Nachrichten vom Client empfangen (SSE-Modus)
 app.post("/messages", async (req, res) => {
-  try {
-    const sessionId = req.query.sessionId;
-    if (!sessionId || typeof sessionId !== "string") {
-      return res.status(400).json({ error: "sessionId fehlt oder ist ungültig" });
-    }
-
-    const transport = transports[sessionId];
-    if (!transport) {
-      return res.status(400).json({ error: `Kein aktiver Transport für sessionId=${sessionId}` });
-    }
-
-    await transport.handlePostMessage(req, res, req.body);
-  } catch (err) {
-    console.error("❌ Fehler beim Nachrichtenempfang:", err);
-    res.status(500).json({ error: "Fehler beim Nachrichtenempfang" });
+  if (!currentTransport) {
+    return res.status(400).send("Kein aktiver Transport verbunden");
   }
+
+  await currentTransport.handlePostMessage(req, res, req.body);
 });
 
-// Server starten
-const PORT = 8080;
-app.listen(PORT, () => {
-  console.log(`✅ SSE MCP-Server läuft auf http://localhost:${PORT}`);
+app.listen(8080, () => {
+  console.log("✅ Läuft auf http://localhost:8080 (ohne Session-ID)");
 });
