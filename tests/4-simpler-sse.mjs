@@ -111,7 +111,7 @@ const sessions = new Map();
 
 // SSE Endpoint
 app.get('/sse', async (req, res) => {
-console.log( 'Request /sse' )
+console.log( 'Request /sse', req.query, req.headers );
 
   // const sessionId = req.query.sessionId || crypto.randomUUID();
   // console.log('Neue Verbindung mit sessionId:', sessionId);
@@ -137,6 +137,7 @@ const { _sessionId: sessionId } = transport
   }, 30000);
 
   req.on('close', () => {
+    console.log(`Verbindung geschlossen für sessionId: ${sessionId}`);
     clearInterval(heartbeat);
     sessions.delete(sessionId);
     transport.close();
@@ -177,7 +178,7 @@ app.use((req, res, next) => {
   next();
 });
 
-const PORT = process.env.PORT || 8080;
+const PORT = 8080
 app.listen(PORT, () => {
   console.log(`MCP SSE Server läuft auf http://localhost:${PORT}`);
   console.log(`Test: npx @modelcontextprotocol/inspector \"http://localhost:${PORT}/sse?sessionId=test123\"`);
