@@ -62,8 +62,23 @@ app.get('/sse', async (req, res) => {
     delete transports.sse[transport.sessionId];
   });
 
+  // Warte, bis der MCP-Server den Transport gestartet hat (inkl. Header senden)
   await server.connect(transport);
+
+  // Jetzt ist es sicher, Keep-Alive Nachrichten zu senden
+  const interval = setInterval(() => {
+    try {
+      res.write(`: keep-alive\n\n`);
+    } catch (err) {
+      clearInterval(interval);
+    }
+  }, 15000);
+
+  res.on("close", () => {
+    clearInterval(interval);
+  });
 });
+
 
 // Legacy Nachrichten-Endpunkt
 app.post('/messages', async (req, res) => {
