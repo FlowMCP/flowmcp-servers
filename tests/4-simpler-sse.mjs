@@ -7,6 +7,7 @@ import { FlowMCP } from 'flowmcp'
 // Optional: Wenn du Zod brauchst, sonst entfernen
 import { z } from 'zod'
 
+
 class MixedTransportServer {
     #app
     #port
@@ -18,14 +19,28 @@ class MixedTransportServer {
         this.#sessionTimeoutMs = sessionTimeoutMs
         this.#app = express()
         this.#app.use(express.json())
+
+        this.#app.get('/version', (req, res) => {
+            res.json({
+                name: 'mixed-transport-server',
+                version: '1.0.0',
+                build: '2025-05-24', // optional: ISO-Date oder GIT SHA einfügen
+                uptime: `${process.uptime().toFixed(1)}s`
+            })
+        })
+
+
         this.#transports = {
             sse: {}
         }
 
         this.#app.get('/debug/sessions', (req, res) => {
-            res.json({
-                activeSSESessions: Object.keys(this.#transports.sse)
-            })
+            const activeSessions = Object.entries(this.#transports.sse)
+                .map(([id, entry]) => ({
+                    sessionId: id,
+                    closed: entry.transport.res?.writableEnded ?? null
+                }))
+            res.json({ activeSSESessions: activeSessions })
         })
     }
 
@@ -37,7 +52,6 @@ class MixedTransportServer {
             const transport = new SSEServerTransport(`${normalizedPath}/messages`, res)
             const { sessionId } = transport
 
-            // Alte Session überschreiben oder aktualisieren
             if (this.#transports.sse[sessionId]?.timeoutHandle) {
                 clearTimeout(this.#transports.sse[sessionId].timeoutHandle)
             }
@@ -49,17 +63,14 @@ class MixedTransportServer {
 
             console.log(`📡 New/Updated SSE connection [sessionId: ${sessionId}]`)
 
-            // Graceful Timeout einplanen
-            const scheduleSessionRemoval = () => {
-                this.#transports.sse[sessionId].timeoutHandle = setTimeout(() => {
-                    console.log(`⏳ Session expired [sessionId: ${sessionId}]`)
-                    delete this.#transports.sse[sessionId]
-                }, this.#sessionTimeoutMs)
-            }
-
             res.on('close', () => {
                 console.log(`🔌 SSE connection closed [sessionId: ${sessionId}], waiting ${this.#sessionTimeoutMs}ms for reconnect`)
-                scheduleSessionRemoval()
+                this.#transports.sse[sessionId].timeoutHandle = setTimeout(() => {
+                    if (this.#transports.sse[sessionId]?.transport === transport) {
+                        console.log(`⏳ Session expired [sessionId: ${sessionId}]`)
+                        delete this.#transports.sse[sessionId]
+                    }
+                }, this.#sessionTimeoutMs)
             })
 
             try {
@@ -76,11 +87,15 @@ class MixedTransportServer {
             const transport = entry?.transport
 
             if (!sessionId || !transport) {
-                console.warn(`[POST] Invalid sessionId=${sessionId}. Known sessions:`, Object.keys(this.#transports.sse))
-                return res.status(400).send('No transport found for sessionId')
+                console.warn(`[POST] No transport found for sessionId=${sessionId}`)
+                return res.status(400).send('No active transport for sessionId')
             }
 
-            // Sitzung ist aktiv – erneutes Timeout zurücksetzen
+            if (transport.res?.writableEnded || transport.res?.closed) {
+                console.warn(`[POST] Transport stream already closed for sessionId=${sessionId}`)
+                return res.status(400).send('Transport stream closed for sessionId')
+            }
+
             if (entry.timeoutHandle) {
                 clearTimeout(entry.timeoutHandle)
                 entry.timeoutHandle = null
@@ -110,6 +125,7 @@ class MixedTransportServer {
         return instance
     }
 }
+
 
 
 import { schema } from './../schemas/v1.2.0/poap/graphql.mjs'
