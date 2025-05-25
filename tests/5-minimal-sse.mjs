@@ -67,10 +67,10 @@ console.log( 'Messages')
 app.get( '/', (req, res) => {
   res.send(`
     <h1>Model Context Protocol Server</h1>
-    <p>Use the <a href="/sse">SSE endpoint</a> for legacy clients. 1.0.0</p>
+    <p>Use the <a href="/sse">SSE endpoint</a> for legacy clients. 1.0.1</p>
   `);
 } )
 
 console.log( 'TEST' )
-console.log( 'Setup Version: 1.0.0' )
+console.log( 'Setup Version: 1.0.1' )
 app.listen(8080)
