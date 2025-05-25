@@ -69,5 +69,6 @@ app.get( '/', (req, res) => {
   `);
 } )
 
+console.log( 'TEST' )
 console.log( 'Setup Version: 1.0.0' )
 app.listen(8080)
