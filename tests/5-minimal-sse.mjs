@@ -41,6 +41,9 @@ app.get('/sse', async (req, res) => {
   // Create SSE transport for legacy clients
 console.log( 'SSE' )
   const transport = new SSEServerTransport('/messages', res);
+  res.write(`data: {"type": "session", "sessionId": "${transport.sessionId}"}\n\n`);
+  
+
   transports.sse[transport.sessionId] = transport;
   
 /*
