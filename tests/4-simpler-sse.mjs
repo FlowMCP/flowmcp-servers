@@ -196,6 +196,7 @@ app.use((req, res, next) => {
 });
 
 
+console.log( 'WWWWWWWWWWWWW')
 const PORT = 8080
 app.listen(PORT, () => {
   console.log(`MCP SSE Server läuft auf http://localhost:${PORT}`);
