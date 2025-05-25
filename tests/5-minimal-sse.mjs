@@ -43,9 +43,11 @@ console.log( 'SSE' )
   const transport = new SSEServerTransport('/messages', res);
   transports.sse[transport.sessionId] = transport;
   
+/*
   res.on("close", () => {
     delete transports.sse[transport.sessionId];
   });
+*/
   
   await server.connect(transport);
 });
