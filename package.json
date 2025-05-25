@@ -19,5 +19,5 @@
     "@modelcontextprotocol/sdk": "^1.12.0",
     "flowmcp": "github:flowmcp/flowmcp#483cb1e25c626ed135d8b336be6412cb7a083170",
     "zod": "^3.25.27"
-  }
+  } 
 }
