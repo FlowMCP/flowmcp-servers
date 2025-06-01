@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./tests/5-minimal-sse.mjs",
+    "start": "node ./example-stateless.mjs",
     "inspector": "npx @modelcontextprotocol/inspector node tests/3-simpler-plus-see.mjs"
   },
   "keywords": [],
