@@ -1,1 +1,0 @@
-web: node tests/5-minimal-sse.mjs 

@@ -1,5 +1,5 @@
 {
-  "name": "6-remote-mcp-server-demo",
+  "name": "flowmcp-server",
   "version": "1.0.0",
   "main": "./src/index.js",
   "directories": {
@@ -17,7 +17,10 @@
   "dependencies": {
     "@modelcontextprotocol/inspector": "^0.13.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "flowmcp": "github:flowmcp/flowmcp#483cb1e25c626ed135d8b336be6412cb7a083170",
-    "zod": "^3.25.27"
-  } 
+    "flowmcp": "github:flowmcp/flowmcp#23d88e164d3bd28a66fa4dd7642e853089882c6a"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/inspector": "^0.13.0",
+    "schemaImporter": "github:flowmcp/flowMCP-schemas#3c06b47a711f966e88def180e19c418b4e05a03c"
+  }
 }
