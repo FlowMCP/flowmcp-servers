@@ -44,7 +44,7 @@ const { includeNamespaces, excludeNamespaces, activateTags, source } = FlowMCP
     } )
 const { envObject } = getEnvObject( { 
     source,
-    envPath: './../../../.env'
+    envPath: './../../.env'
 } )
 
 const { activationPayloads } = FlowMCP

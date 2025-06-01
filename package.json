@@ -21,6 +21,6 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/inspector": "^0.13.0",
-    "schemaImporter": "github:flowmcp/flowMCP-schemas#3c06b47a711f966e88def180e19c418b4e05a03c"
+    "schema-importer": "github:flowmcp/flowMCP-schemas#3c06b47a711f966e88def180e19c418b4e05a03c"
   }
 }
