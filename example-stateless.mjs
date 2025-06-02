@@ -26,7 +26,7 @@ remoteServer
     .addActivationPayloads( { 
         activationPayloads, 
         routePath: '/stateless', 
-        transportProtocols: [ 'statelessStreamable' ] 
+       // transportProtocols: [ 'statelessStreamable' ] 
     } )
 remoteServer.start()
 

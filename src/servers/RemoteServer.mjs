@@ -9,7 +9,6 @@ import { FlowMCP } from 'flowmcp'
 
 class RemoteServer {
     #app
-    #stickyTransports
     #config
     #state
     #silent
@@ -39,7 +38,6 @@ class RemoteServer {
 
         this.#app = express()
         this.#app.use( express.json() )
-        // this.#state['stickyTransports'] = { 'sse': {}, 'http': {} }
 
         return true
     }
@@ -60,9 +58,9 @@ class RemoteServer {
     }
 
 
-    async addActivationPayloads( { routePath, activationPayloads, transportProtocols, bearer=null } ) {
+    async addActivationPayloads( { routePath, activationPayloads, transportProtocols, bearerToken } ) {
         this.#validateSetRoute( { routePath, activationPayloads, transportProtocols } )
-        const authMiddleware = bearer ? this.#createAuthMiddleware( { bearer } ) : null
+        const authMiddleware = bearerToken ? this.#createAuthMiddleware( { bearerToken } ) : null
         const payload = { routePath, activationPayloads }
 
         await Promise.all(
@@ -217,7 +215,7 @@ class RemoteServer {
     }
 
 
-    #setStickyStreamableRoute({ routePath, activationPayloads }, authMiddleware, protocol ) {
+    #setStickyStreamableRoute( { routePath, activationPayloads }, authMiddleware, protocol ) {
         let { fullPath } = this
             .#getRoute( { routePath, protocol } )
         const middlewares = authMiddleware ? [authMiddleware] : []
@@ -264,8 +262,8 @@ class RemoteServer {
             await transport.handleRequest( req, res, req.body )
         } )
 
-        this.#app.get( path, ...middlewares, ( req, res ) => this.#handleSessionRequest( req, res ) )
-        this.#app.delete( path, ...middlewares, ( req, res ) => this.#handleSessionRequest( req, res ) )
+        this.#app.get( fullPath, ...middlewares, ( req, res ) => this.#handleSessionRequest( req, res ) )
+        this.#app.delete( fullPath, ...middlewares, ( req, res ) => this.#handleSessionRequest( req, res ) )
 
         return true
     }
@@ -357,8 +355,10 @@ class RemoteServer {
     }
 
 
-    #createAuthMiddleware( { bearer } ) {
+    #createAuthMiddleware( { bearerToken } ) {
+        // !this.#silent ? console.log( `Activate BearerToken: ${bearerToken}` ) : ''
         return ( req, res, next ) => {
+            !this.#silent ? console.log( 'Authorization middleware triggered' ) : ''
             const authHeader = req.headers['authorization']
             if( !authHeader || !authHeader.startsWith( 'Bearer ' ) ) {
                 return res
@@ -367,7 +367,7 @@ class RemoteServer {
             }
 
             const token = authHeader.split(' ')[ 1 ]
-            if( token !== bearer ) {
+            if( token !== bearerToken ) {
                 return res
                     .status( 403 )
                     .json( { error: 'Invalid Veritoken' } )
