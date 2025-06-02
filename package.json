@@ -7,7 +7,11 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./tests/others/argv.mjs --bearerToken=1234 --transportProtocols=sse,stickyStreamable",
+    "start": "node ./tests/others/argv-remote.mjs --bearerToken=1234 --transportProtocols=sse,stickyStreamable",
+    "remoteStateless": "node ./tests/others/quick.mjs --serverType=remote --bearerToken=1234 --transportProtocols=statelessStreamable",
+    "remoteSseAndSticky": "node ./tests/others/quick.mjs --serverType=remote --bearerToken=1234 --transportProtocols=sse,stickyStreamable",
+    "local": "node ./tests/others/quick.mjs --serverType=local  --envType=processEnv",
+
     "inspector": "npx @modelcontextprotocol/inspector node tests/3-simpler-plus-see.mjs"
   },
   "keywords": [],

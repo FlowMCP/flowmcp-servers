@@ -10,7 +10,7 @@ class Parameters {
         ]
 
         const envParameters = [
-            [ '--envType=',            'envType',            'string',  'file' /* 'process.env' */      ],
+            [ '--envType=',            'envType',            'string',  'file' /* 'processEnv' */      ],
             [ '--envPath=',            'envPath',            'string',  '.example.env'                  ]
         ]
 
@@ -137,7 +137,7 @@ class Parameters {
                     }, {} )
                 break
             }
-            case 'process.env': {
+            case 'processEnv': {
                 loadedObject = processEnv
                 break
             }
