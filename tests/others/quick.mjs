@@ -1,18 +1,25 @@
-import { SchemaImporter } from 'schema-importer'
+import { SchemaImporter } from 'schemaimporter'
 import { Deploy } from '../../src/index.mjs'
 
 
-const schemaFilePaths = await SchemaImporter
-    .get( { 
-        'onlyWithoutImports': true,
-        'withMetaData': true, 
-        'withSchema': true 
+const arrayOfSchemas = await SchemaImporter
+    .loadFromFolder( {
+        excludeSchemasWithImports: true,
+        excludeSchemasWithRequiredServerParams: true,
+        addAdditionalMetaData: true,
+        outputType: 'onlySchema'
     } )
-const arrayOfSchemas = schemaFilePaths
-    .map( ( { schema } ) => schema )
 
-await Deploy.quick( {
-    'argv': process.argv,
-    'processEnv': process.env,
-    arrayOfSchemas
-} )
+const { serverType, app } = Deploy
+    .init( {
+        'argv': process.argv,
+        'processEnv': process.env,
+        arrayOfSchemas
+    } )
+if( serverType === 'remote' ) {
+    app.get( '/', ( req, res ) => {
+        res.send( 'ABC' )
+    } )
+}
+
+await Deploy.start()

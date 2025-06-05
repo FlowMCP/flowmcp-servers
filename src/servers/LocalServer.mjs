@@ -20,6 +20,9 @@ class LocalServer {
             }
         }
 
+        const { serverDescription } = this.#config
+        this.#server = new McpServer( serverDescription )
+
         return true
     }
 
@@ -39,12 +42,12 @@ class LocalServer {
     }
 
 
-    addActivationPayloads( { activationPayloads } ) {
-        if( this.#server === undefined ) {
-            const { serverDescription } = this.#config
-            this.#server = new McpServer( serverDescription )
-        }
+    getApp() {
+        return this.#server
+    }
 
+
+    addActivationPayloads( { activationPayloads } ) {
         activationPayloads
             .forEach( ( { serverParams, schema, activateTags } ) => {
                 FlowMCP

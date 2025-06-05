@@ -5,7 +5,10 @@ import { FlowMCP } from 'flowmcp'
 
 
 class Deploy {
-    static async quick( { argv, processEnv, arrayOfSchemas } ) {
+    static #serverClass
+
+
+    static init( { argv, processEnv, arrayOfSchemas } ) {
         const { argvs, envObject } = Parameters
             .getParameters( { argv,processEnv,arrayOfSchemas } )
         const { serverType, activateTags, excludeNamespaces, includeNamespaces } = argvs
@@ -18,23 +21,44 @@ class Deploy {
                 excludeNamespaces 
             } )
 
+        let app = null
         if( serverType === 'local' ) {
-            await Deploy.#localServer( { argvs, activationPayloads } )
+            app = Deploy.#localServer( { argvs, activationPayloads } )
         } else if( serverType === 'remote' ) {
-            Deploy.#remoteServer( { argvs, activationPayloads } )
+            app = Deploy.#remoteServer( { argvs, activationPayloads } )
+        } else {
+            throw new Error( `Unknown server type: ${serverType}` )
         }
+
+        return { serverType, app  }
+    }
+
+
+    static async start() {
+        const { type, server } = this.#serverClass
+        if( type === 'local' ) {
+            await server.start()
+            !server.silent ? console.warn( 'Local Server started successfully.' ) : ''
+        } else if( type === 'remote' ) {
+            server.start()
+            !server.silent ? console.log( 'Remote Server started successfully.' ) : ''
+        } else {
+            throw new Error( `Unknown server type: ${type}` )
+        }
+
+        return true
     }
 
 
     static async #localServer( { argvs, activationPayloads } ) {
+        !silent ? console.log( 'Starting Local Server...' ) : ''
         const { silent } = argvs
-        const localServer = new LocalServer( { silent: true } )
+        const localServer = new LocalServer( { silent } )
         localServer
             .addActivationPayloads( { activationPayloads } )
-        await localServer.start()
-        !silent ? console.warn( 'Local Server started successfully.' ) : ''
+        this.#serverClass = { 'type': 'local', 'server': localServer }
 
-        return true
+        return localServer.getApp()
     }
 
 
@@ -45,10 +69,14 @@ class Deploy {
             .setConfig( { 'overwrite': { rootUrl, port } } )
         remoteServer
             .addActivationPayloads( { activationPayloads, routePath, transportProtocols, bearerToken } )
+        this.#serverClass = { 'type': 'remote', 'server': remoteServer }
+
+/*
         remoteServer.start()
         !silent ? console.log( 'Remote Server started successfully.' ) : ''
+*/
 
-        return true
+        return remoteServer.getApp()
     }
 }
 

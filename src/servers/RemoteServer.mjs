@@ -58,6 +58,11 @@ class RemoteServer {
     }
 
 
+    getApp() {
+        return this.#app
+    }
+
+
     async addActivationPayloads( { routePath, activationPayloads, transportProtocols, bearerToken } ) {
         this.#validateSetRoute( { routePath, activationPayloads, transportProtocols } )
         const authMiddleware = bearerToken ? this.#createAuthMiddleware( { bearerToken } ) : null
@@ -317,12 +322,12 @@ class RemoteServer {
 
     #printRoutes() {
         const { rootUrl, port } = this.#config
-        this.#silent ? console.log(`🚀 Server is running on ${rootUrl}:${port}`) : ''
-        this.#silent ? console.log('📜 Available Routes:') : ''
+        !this.#silent ? console.log(`🚀 Server is running on ${rootUrl}:${port}`) : ''
+        !this.#silent ? console.log('📜 Available Routes:') : ''
         
         this.#state['routes']
             .forEach(route => {
-                this.#silent ? console.log(`-  ${rootUrl}:${port}${route}`) : ''
+                !this.#silent ? console.log(`-  ${rootUrl}:${port}${route}`) : ''
             } )
 
         return true
