@@ -64,3 +64,18 @@ remoteServer
         transportProtocols: [ 'sse' ] 
     } )
 remoteServer.start()
+const mcps = remoteServer.getMcps()
+const events = remoteServer.getEvents()
+events
+    .on( 'sessionCreated', ( { protocol, sessionId } ) => {
+        console.log( `Session created: Protocol: ${protocol}, Session ID: ${sessionId}` )
+        return true
+    } )
+events
+    .on( 'callReceived', ( { protocol, sessionId, method, toolName } ) => {
+        console.log( `Call: Protocol: ${protocol}, Session ID: ${sessionId}, method ${method}, toolName: ${toolName}` )
+    } )
+events
+    .on( 'sessionClosed', ( { protocol, sessionId } ) => {
+        console.log( `Session closed: Protocol: ${protocol}, Session ID: ${sessionId}` )
+    } )

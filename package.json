@@ -21,7 +21,7 @@
   "dependencies": {
     "@modelcontextprotocol/inspector": "^0.13.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "flowmcp": "github:flowmcp/flowmcp#23d88e164d3bd28a66fa4dd7642e853089882c6a"
+    "flowmcp": "github:flowmcp/flowmcp#07605d3d1b8fc1a543ab0ae268901fcacb8f69f6"
   },
   "devDependencies": {
     "@modelcontextprotocol/inspector": "^0.13.0",

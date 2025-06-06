@@ -5,6 +5,8 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js"
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 import { FlowMCP } from 'flowmcp'
+import { Event } from './../task/Event.mjs'
+
 
 
 class RemoteServer {
@@ -12,9 +14,12 @@ class RemoteServer {
     #config
     #state
     #silent
+    #mcps
+    #events
 
 
     constructor( { silent = false } = {} ) {
+        // super()
         this.#silent = silent || false
         this.#config = { 
             'rootUrl': 'http://localhost', 
@@ -30,16 +35,22 @@ class RemoteServer {
                 'version': '1.2.0'
             }
         }
+        this.#events = new Event()
+        this.#mcps = {
+            'sse': { 'sessionIds': {} }
+            // 'sse': { 'server': null, 'tools': {}, 'sessionIds': { 'transport': null } },
+            // 'stickyStreamable': { 'server': null, 'tools': {}, 'sessionIds': {} },
+            // 'statelessStreamable': { 'server': null, 'tools': {} }
+        }
 
         this.#state = {
             'routes': [],
-            'stickyTransports': { 'sse': {}, 'http': {} }
+            // 'stickyTransports': { 'sse': {}, 'http': {} }
         }
 
         this.#app = express()
         this.#app.use( express.json() )
 
-        return true
     }
 
 
@@ -60,6 +71,16 @@ class RemoteServer {
 
     getApp() {
         return this.#app
+    }
+
+
+    getMcps() {
+        return this.#mcps
+    }
+
+
+    getEvents() {
+        return this.#events
     }
 
 
@@ -97,7 +118,7 @@ class RemoteServer {
             } )
         } )
 
-        return server
+        return true
     }
 
 
@@ -156,11 +177,9 @@ class RemoteServer {
             .#getRoute( { routePath, protocol } )
         const middlewares = authMiddleware ? [authMiddleware] : []
 
-        var server = new McpServer( {
-            name: "",
-            version: "1.0.0"
-        } )
-        this.#injectFlowMCP( { server, activationPayloads } )
+        var server = new McpServer( { name: "", version: "1.0.0" } )
+        
+        this.#injectFlowMCP( { server, activationPayloads, protocol } )
 
         this.#app.post( fullPath, ...middlewares, async (req, res ) => {
             try {
@@ -224,34 +243,35 @@ class RemoteServer {
         let { fullPath } = this
             .#getRoute( { routePath, protocol } )
         const middlewares = authMiddleware ? [authMiddleware] : []
-            
+        let activatedMcpTools = null    
+
+        const server = new McpServer({ name: 'example-server', version: '1.0.0' })
+        this.#injectFlowMCP( { server, activationPayloads, protocol } )
+
         this.#app.post( fullPath, ...middlewares, async( req, res ) => {
             const sessionId = req.headers['mcp-session-id']
             this.#silent ? console.log(`Incoming POST request at ${fullPath} with session ID: ${sessionId}`) : ''
 
             let transport
-            if( sessionId && this.#state['stickyTransports']['http'][ sessionId ] ) {
+            if( sessionId && this.#mcps[ protocol ]['sessionIds'][ sessionId ] ) {
                 this.#silent ? console.log( `Reusing existing session: ${sessionId}` ) : ''
-                transport = this.#state['stickyTransports']['http'][ sessionId ]
+                transport = this.#mcps[ protocol ]['sessionIds'][ sessionId ]
             } else if( !sessionId && isInitializeRequest( req.body ) ) {
                 this.#silent ? console.log( `Initializing new session` ) : ''
                 transport = new StreamableHTTPServerTransport( {
                     sessionIdGenerator: () => randomUUID(),
                     onsessioninitialized: ( newSessionId ) => {
                         this.#silent ? console.log(`Session initialized: ${newSessionId}`) : ''
-                        this.#state['stickyTransports']['http'][ newSessionId ] = transport
+                        this.#mcps[ protocol ]['sessionIds'][ newSessionId ] = transport
                     }
                 } )
 
                 transport.onclose = () => {
                     if( transport.sessionId ) {
                         this.#silent ? console.log(`Closing session: ${transport.sessionId}`) : ''
-                        delete this.#state['stickyTransports']['http'][transport.sessionId]
+                        delete this.#mcps[ protocol ]['sessionIds'][transport.sessionId]
                     }
                 }
-
-                const server = new McpServer({ name: 'example-server', version: '1.0.0' })
-                this.#injectFlowMCP( { server, activationPayloads } )
 
                 await server.connect( transport )
             } else {
@@ -277,30 +297,44 @@ class RemoteServer {
     #setStickySseRoute( { routePath, activationPayloads }, authMiddleware, protocol ) {
         const { fullPath, messagesPath } = this
             .#getRoute( { routePath, protocol } )
-        const middlewares = authMiddleware ? [authMiddleware] : []
+        const middlewares = authMiddleware ? [ authMiddleware ] : []
 
         this.#app.get( fullPath, ...middlewares, async ( req, res ) => {
+            const server = new McpServer( { name: 'backwards-compatible-server', version: '1.0.0' } )
+            const { activatedMcpTools: tools } = this.#injectFlowMCP( { server, activationPayloads, protocol } )
+
             const transport = new SSEServerTransport( messagesPath, res )
             const { _sessionId } = transport
-            this.#state['stickyTransports']['sse'][ _sessionId ] = transport
+            this.#mcps[ protocol ]['sessionIds'][ _sessionId ] = { server, tools, transport }
+            this.#sendEvent( { channelName: 'sessionCreated', message: { protocol, 'sessionId': _sessionId } } )
 
             res.on('close', () => {
-                delete this.#state['stickyTransports']['sse'][ _sessionId ]
+                delete this.#mcps[ protocol ]['sessionIds'][ _sessionId ]
+                this.#sendEvent( { channelName: 'sessionClosed', message: { protocol, 'sessionId': _sessionId } } )
             } )
 
-            const server = new McpServer( {
-                name: "backwards-compatible-server",
-                version: "1.0.0"
-            } )
-            this.#injectFlowMCP( { server, activationPayloads } )
             await server.connect( transport )
-        })
+        } )
 
         this.#app.post( messagesPath, ...middlewares, async ( req, res ) => {
             const { sessionId } = req.query
-            const transport = this.#state['stickyTransports']['sse'][sessionId]
+            if( typeof sessionId !== 'string' ) {
+                res.status(400).send( 'Invalid sessionId' )
+                return
+            } else if( Object.hasOwn( this.#mcps[ protocol ]['sessionIds'], sessionId ) === false ) {
+                res.status( 400 ).send( 'SessionId not found' )
+                return
+            } 
 
-            if( transport ) { await transport.handlePostMessage(req, res, req.body) } 
+            let transport = this.#mcps[ protocol ]['sessionIds'][ sessionId ]['transport']
+
+            if( transport ) { 
+                await transport.handlePostMessage( req, res, req.body ) 
+                const method = req.body?.method || 'unknown'
+                const { params: { name: toolName } } = req.body
+
+                this.#sendEvent( { channelName: 'callReceived', message: { protocol, sessionId, method, toolName } } )
+            } 
             else { res.status(400).send('No transport found for sessionId') }
         } )
 
@@ -308,14 +342,14 @@ class RemoteServer {
     }
 
 
-    async #handleSessionRequest(req, res) {
+    async #handleSessionRequest( req, res ) {
         const sessionId = req.headers['mcp-session-id']
-        if (!sessionId || !this.#state['stickyTransports']['sse'][sessionId]) {
-            res.status(400).send('Invalid or missing session ID')
+        if (!sessionId || !this.#mcps[ protocol ]['sessionIds'][sessionId]) {
+            res.status( 400 ).send( 'Invalid or missing session ID' )
             return
         }
 
-        const transport = this.#state['stickyTransports']['sse'][sessionId]
+        const transport = this.#mcps[ protocol ]['sessionIds'][sessionId]
         await transport.handleRequest(req, res)
     }
 
@@ -351,12 +385,21 @@ class RemoteServer {
     }
 
 
-    #injectFlowMCP( { server, activationPayloads } ) {
-        activationPayloads
-            .forEach(( { serverParams, schema, activateTags } ) => {
-                FlowMCP.activateServerTools( { server, schema, serverParams, activateTags, 'silent': true } )
-            } )
-        return true
+    #injectFlowMCP( { server, activationPayloads, protocol } ) {
+        const activatedMcpTools = activationPayloads
+            .reduce( ( acc, { serverParams, schema, activateTags } ) => {
+                const { mcpTools } = FlowMCP
+                    .activateServerTools( { server, schema, serverParams, activateTags, 'silent': true } )
+                Object
+                    .entries( mcpTools )
+                    .forEach( ( [ key, value ] ) => {
+                        acc[ key ] = value
+                    } )
+
+                return acc
+            }, {} )
+
+        return { activatedMcpTools }
     }
 
 
@@ -380,6 +423,12 @@ class RemoteServer {
 
             next()
         }
+    }
+
+
+    #sendEvent( { channelName, message } ) {
+        this.#events.sendEvent( { channelName, message } )
+        return true
     }
 }
 
