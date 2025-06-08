@@ -10,16 +10,14 @@ const arrayOfSchemas = await SchemaImporter
         outputType: 'onlySchema'
     } )
 
-const { serverType, app } = Deploy
+const { serverType, app, mcps, events, argv } = Deploy
     .init( {
         'argv': process.argv,
         'processEnv': process.env,
         arrayOfSchemas
     } )
 if( serverType === 'remote' ) {
-    app.get( '/', ( req, res ) => {
-        res.send( 'ABC' )
-    } )
+    app.get( '/', ( req, res ) => { res.send( 'Welcome' ) } )
 }
 
 await Deploy.start()

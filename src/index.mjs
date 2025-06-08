@@ -21,16 +21,18 @@ class Deploy {
                 excludeNamespaces 
             } )
 
-        let app = null
+        let app, mcps, events
         if( serverType === 'local' ) {
-            app = Deploy.#localServer( { argvs, activationPayloads } )
+            const { app: _a, mcps: _m, events: _e } = Deploy.#localServer( { argvs, activationPayloads } )
+            app = _a; mcps = _m; events = _e
         } else if( serverType === 'remote' ) {
-            app = Deploy.#remoteServer( { argvs, activationPayloads } )
+            const { app: _a, mcps: _m, events: _e } = Deploy.#remoteServer( { argvs, activationPayloads } )
+            app = _a; mcps = _m; events = _e
         } else {
             throw new Error( `Unknown server type: ${serverType}` )
         }
 
-        return { serverType, app  }
+        return { serverType, app, mcps, events, argvs  }
     }
 
 
@@ -57,8 +59,9 @@ class Deploy {
         localServer
             .addActivationPayloads( { activationPayloads } )
         this.#serverClass = { 'type': 'local', 'server': localServer }
+        const app = localServer.getApp()
 
-        return localServer.getApp()
+        return { app, mcps: null, events: null }
     }
 
 
@@ -75,8 +78,11 @@ class Deploy {
         remoteServer.start()
         !silent ? console.log( 'Remote Server started successfully.' ) : ''
 */
+        const app = remoteServer.getApp()
+        const mcps = remoteServer.getMcps()
+        const events = remoteServer.getEvents()
 
-        return remoteServer.getApp()
+        return { app, mcps, events }
     }
 }
 

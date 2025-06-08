@@ -61,7 +61,7 @@ remoteServer
     .addActivationPayloads( { 
         activationPayloads, 
         routePath: '/this', 
-        transportProtocols: [ 'sse' ] 
+        transportProtocols: [ 'sse', 'statelessStreamable' ] 
     } )
 remoteServer.start()
 const mcps = remoteServer.getMcps()
