@@ -9,7 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:local":  "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=local --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=sse --routePath=/flowmcp",
     "start:remote": "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=remote --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=sse --routePath=/flowmcp",
-    "start:digitalocean": "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=remote --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=true --transportProtocols=statelessStreamable --routePath=/flowmcp",
+    "start:digitalocean": "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=remote --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=statelessStreamable --routePath=/flowmcp",
     "inspector": "npx @modelcontextprotocol/inspector node tests/3-simpler-plus-see.mjs"
   },
   "keywords": [],
