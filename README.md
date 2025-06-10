@@ -11,7 +11,7 @@ This repository provides two server implementations compatible with the **FlowMC
 
 Deploy with DigitalOcean
 
-[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?spec=https://raw.githubusercontent.com/flowmcp/flowmcp-servers/main/spec.yaml)
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?spec=https://raw.githubusercontent.com/FlowMCP/flowmcp-servers/main/spec.yaml)
 
 
 ## 🖥 Local Server

@@ -3,7 +3,7 @@ spec:
   services:
     - name: web
       git:
-        repo_clone_url: https://github.com/flowmcp/flowmcp-servers
+        repo_clone_url: https://github.com/FlowMCP/flowmcp-servers
         branch: main
       deploy_on_push: true
       build_command: npm install
