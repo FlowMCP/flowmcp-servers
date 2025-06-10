@@ -27,14 +27,6 @@ function getEnvObject( { source, envPath } ) {
 }
 
 
-const arrayOfSchemas = await SchemaImporter
-    .loadFromFolder( {
-        excludeSchemasWithImports: true,
-        excludeSchemasWithRequiredServerParams: false,
-        addAdditionalMetaData: true,
-        outputType: 'onlySchema'
-    } )
-
 const { includeNamespaces, excludeNamespaces, activateTags, source } = FlowMCP
     .getArgvParameters( {
         'argv': process.argv,
@@ -47,13 +39,27 @@ const { envObject } = getEnvObject( {
     envPath: './../../.env'
 } )
 
+const arrayOfSchemas = await SchemaImporter
+    .loadFromFolder( {
+        excludeSchemasWithImports: true,
+        excludeSchemasWithRequiredServerParams: false,
+        addAdditionalMetaData: true,
+        outputType: 'onlySchema'
+    } )
+
+const { filteredArrayOfSchemas } = FlowMCP
+    .filterArrayOfSchemas( { 
+        arrayOfSchemas, 
+        includeNamespaces, 
+        excludeNamespaces, 
+        activateTags 
+    } )
+
+
 const { activationPayloads } = FlowMCP
     .prepareActivations( { 
         arrayOfSchemas, 
-        envObject, 
-        activateTags,
-        includeNamespaces,
-        excludeNamespaces
+        envObject
     } )
 
 const remoteServer = new RemoteServer( { silent: false } )

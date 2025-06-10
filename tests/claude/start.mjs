@@ -5,7 +5,7 @@ import { Deploy } from '../../src/index.mjs'
 const arrayOfSchemas = await SchemaImporter
     .loadFromFolder( {
         excludeSchemasWithImports: true,
-        excludeSchemasWithRequiredServerParams: true,
+        excludeSchemasWithRequiredServerParams: false,
         addAdditionalMetaData: true,
         outputType: 'onlySchema'
     } )

@@ -7,10 +7,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node ./tests/others/argv-remote.mjs --bearerToken=1234 --transportProtocols=sse,stickyStreamable",
-    "remoteStateless": "node ./tests/others/quick.mjs --serverType=remote --bearerToken=1234 --transportProtocols=statelessStreamable",
-    "remoteSseAndSticky": "node ./tests/others/quick.mjs --serverType=remote --bearerToken=1234 --transportProtocols=sse,stickyStreamable",
-    "local": "node ./tests/others/quick.mjs --serverType=local  --envType=processEnv",
+    "start:local":  "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=local --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=sse --routePath=/flowmcp",
+    "start:remote": "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=remote --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=sse --routePath=/flowmcp",
 
     "inspector": "npx @modelcontextprotocol/inspector node tests/3-simpler-plus-see.mjs"
   },
@@ -21,7 +19,7 @@
   "dependencies": {
     "@modelcontextprotocol/inspector": "^0.13.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "flowmcp": "github:flowmcp/flowmcp#07605d3d1b8fc1a543ab0ae268901fcacb8f69f6"
+    "flowmcp": "github:flowmcp/flowmcp#a1523aa60699e168a6c7b4ec923ac5ee4f15d89a"
   },
   "devDependencies": {
     "@modelcontextprotocol/inspector": "^0.13.0",

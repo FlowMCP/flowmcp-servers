@@ -12,13 +12,19 @@ class Deploy {
         const { argvs, envObject } = Parameters
             .getParameters( { argv,processEnv,arrayOfSchemas } )
         const { serverType, activateTags, excludeNamespaces, includeNamespaces } = argvs
+
+        const { filteredArrayOfSchemas } = FlowMCP
+            .filterArrayOfSchemas( { 
+                arrayOfSchemas, 
+                includeNamespaces, 
+                excludeNamespaces, 
+                activateTags 
+            } )
+
         const { activationPayloads } = FlowMCP
             .prepareActivations( { 
-                arrayOfSchemas,
-                envObject,
-                activateTags,
-                includeNamespaces,
-                excludeNamespaces 
+                'arrayOfSchemas': filteredArrayOfSchemas,
+                envObject
             } )
 
         let app, mcps, events
@@ -53,14 +59,14 @@ class Deploy {
 
 
     static async #localServer( { argvs, activationPayloads } ) {
-        !silent ? console.log( 'Starting Local Server...' ) : ''
         const { silent } = argvs
+        !silent ? console.log( 'Starting Local Server...' ) : ''
         const localServer = new LocalServer( { silent } )
         localServer
             .addActivationPayloads( { activationPayloads } )
         this.#serverClass = { 'type': 'local', 'server': localServer }
         const app = localServer.getApp()
-
+    
         return { app, mcps: null, events: null }
     }
 
@@ -74,10 +80,6 @@ class Deploy {
             .addActivationPayloads( { activationPayloads, routePath, transportProtocols, bearerToken } )
         this.#serverClass = { 'type': 'remote', 'server': remoteServer }
 
-/*
-        remoteServer.start()
-        !silent ? console.log( 'Remote Server started successfully.' ) : ''
-*/
         const app = remoteServer.getApp()
         const mcps = remoteServer.getMcps()
         const events = remoteServer.getEvents()

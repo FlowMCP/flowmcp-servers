@@ -40,7 +40,6 @@ FlowMCP
         schema, 
         routeName: 'getTypename',
         serverParams: {}, 
-        activateTags: [], 
         'silent': true 
     } )
 

@@ -1,23 +1,31 @@
 import { Parameters } from './../../src/index.mjs'
 import { RemoteServer } from './../../src/index.mjs'
-import { SchemaImporter } from 'schema-importer'
+import { SchemaImporter } from 'schemaimporter'
 import { FlowMCP } from 'flowmcp'
 
 
-const schemaFilePaths = await SchemaImporter
-    .get( { 
-        'onlyWithoutImports': true,
-        'withMetaData': true, 
-        'withSchema': true 
+const arrayOfSchemas = await SchemaImporter
+    .loadFromFolder( {
+        excludeSchemasWithImports: true,
+        excludeSchemasWithRequiredServerParams: true,
+        addAdditionalMetaData: true,
+        outputType: 'onlySchema'
     } )
-const arrayOfSchemas = schemaFilePaths
-    .map( ( { schema } ) => schema )
+
+const { filteredArrayOfSchemas } = FlowMCP
+    .filterArrayOfSchemas( { 
+        arrayOfSchemas, 
+        includeNamespaces: [],
+        excludeNamespaces: [],
+        activateTags: [] 
+    } )
+
 
 const { argvs, envObject } = Parameters
     .getParameters( { 
         'argv': process.argv,
         'processEnv': process.env,
-        arrayOfSchemas,
+        'arrayOfSchemas': filteredArrayOfSchemas,
     } )
 
 const { 
@@ -39,11 +47,8 @@ if( !silent ) {
 
 const { activationPayloads } = FlowMCP
     .prepareActivations( { 
-        arrayOfSchemas,
-        envObject,
-        activateTags,
-        includeNamespaces,
-        excludeNamespaces 
+        'arrayOfSchemas': filteredArrayOfSchemas,
+        envObject
     } )
 
 const remoteServer = new RemoteServer( { silent } )

@@ -8,7 +8,6 @@ import { FlowMCP } from 'flowmcp'
 import { Event } from './../task/Event.mjs'
 
 
-
 class RemoteServer {
     #app
     #config
@@ -19,7 +18,6 @@ class RemoteServer {
 
 
     constructor( { silent = false } = {} ) {
-        // super()
         this.#silent = silent || false
         this.#config = { 
             'rootUrl': 'http://localhost', 
@@ -49,6 +47,7 @@ class RemoteServer {
         this.#app = express()
         this.#app.use( express.json() )
 
+        return true
     }
 
 
@@ -84,7 +83,7 @@ class RemoteServer {
 
     async addActivationPayloads( { routePath, activationPayloads, transportProtocols, bearerToken } ) {
         this.#validateSetRoute( { routePath, activationPayloads, transportProtocols } )
-        const authMiddleware = bearerToken ? this.#createAuthMiddleware( { bearerToken } ) : null
+        const authMiddleware = bearerToken ? this.#setBearerTokenValidation( { bearerToken } ) : null
         const payload = { routePath, activationPayloads }
 
         await Promise.all(
@@ -139,8 +138,7 @@ class RemoteServer {
                     const n = [ 
                         // [ 'server',       server       ], 
                         [ 'schema',       schema       ], 
-                        [ 'serverParams', serverParams ], 
-                        [ 'activateTags',   activateTags ]
+                        [ 'serverParams', serverParams ]
                     ]
                         .forEach( ( [ name, value ] ) => {
                             if( !obj[ name ] ) {
@@ -388,9 +386,10 @@ class RemoteServer {
     }
 
 
-    #injectFlowMCP( { server, activationPayloads, protocol } ) {
+    #injectFlowMCP( { server, activationPayloads } ) {
         const activatedMcpTools = activationPayloads
             .reduce( ( acc, { serverParams, schema, activateTags } ) => {
+                // set silent to true because in sse every user has its own server instance.
                 const { mcpTools } = FlowMCP
                     .activateServerTools( { server, schema, serverParams, activateTags, 'silent': true } )
                 Object
@@ -406,18 +405,18 @@ class RemoteServer {
     }
 
 
-    #createAuthMiddleware( { bearerToken } ) {
-        // !this.#silent ? console.log( `Activate BearerToken: ${bearerToken}` ) : ''
+    #setBearerTokenValidation( { bearerToken } ) {
+        !this.#silent ? console.log( `Activate Header: Authorization "Bearer ${bearerToken}"` ) : ''
         return ( req, res, next ) => {
-            !this.#silent ? console.log( 'Authorization middleware triggered' ) : ''
+            // !this.#silent ? console.log( 'Authorization middleware triggered', req.headers ) : ''
             const authHeader = req.headers['authorization']
-            if( !authHeader || !authHeader.startsWith( 'Bearer ' ) ) {
+            if( typeof authHeader !== 'string' || !authHeader.startsWith( 'Bearer ' ) ) {
                 return res
                     .status( 401 )
                     .json( { error: 'Missing or malformed Authorization header' } )
             }
 
-            const token = authHeader.split(' ')[ 1 ]
+            const token = `${authHeader}`.replaceAll( 'Bearer ', '' )
             if( token !== bearerToken ) {
                 return res
                     .status( 403 )
