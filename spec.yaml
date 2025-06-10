@@ -1,0 +1,14 @@
+name: flowmcp-server-stateless
+services:
+  - name: web
+    github:
+      repo: flowmcp/flowmcp-servers
+      branch: main
+      deploy_on_push: true
+    run_command: npm run start:digitalocean
+    build_command: npm install
+    environment_slug: node-js
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    routes:
+      - path: /

@@ -7,6 +7,13 @@ This repository provides two server implementations compatible with the **FlowMC
 
 ---
 
+## Quickstart 
+
+Deploy with DigitalOcean
+
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?spec=https://raw.githubusercontent.com/flowmcp/flowmcp-servers/main/spec.yaml)
+
+
 ## 🖥 Local Server
 
 The `LocalServer` is designed for local workflows, using standard input/output streams. It is ideal for CLI tools, testing, and development environments.
