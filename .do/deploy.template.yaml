@@ -5,7 +5,6 @@ spec:
       git:
         repo_clone_url: https://github.com/FlowMCP/flowmcp-servers
         branch: main
-      deploy_on_push: true
       build_command: npm install
       run_command: npm run start:digitalocean
       environment_slug: node-js
