@@ -120,13 +120,9 @@ class DeployAdvanced {
             messages.push( 'config must be an object.' )
         }
 
-
         if( !Array.isArray( arrayOfSchemas ) || arrayOfSchemas.length === 0 ) {
             messages.push( 'arrayOfSchemas must be a non-empty array.' )
         }
-
-
-
 
         return true
     }
