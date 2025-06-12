@@ -17,8 +17,4 @@ const { serverType, app, mcps, events, argv } = Deploy
         arrayOfSchemas
     } )
 
-if( serverType === 'remote' ) {
-    app.get( '/', ( req, res ) => { res.send( 'Welcome' ) } )
-}
-
 await Deploy.start()

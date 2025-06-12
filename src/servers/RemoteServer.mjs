@@ -176,18 +176,18 @@ class RemoteServer {
         var server = new McpServer( { name: "", version: "1.0.0" } )
         const { activatedMcpTools: tools } = this.#injectFlowMCP( { server, activationPayloads, protocol } )
 
-        this.#app.post( fullPath, ...middlewares, async (req, res ) => {
+        this.#app.post( fullPath, ...middlewares, async ( req, res ) => {
             try {
                 const transport = new StreamableHTTPServerTransport( {
                     sessionIdGenerator: undefined,
                 } )
                 
                 this.#mcps[ protocol ]['sessionIds'][ 'default' ] = { server, tools, transport }
-                this.#sendEvent( { channelName: 'sessionCreated', message: { protocol, 'sessionId': 'default' } } )
+                this.#sendEvent( { channelName: 'sessionCreated', message: { protocol, routePath, 'sessionId': 'default' } } )
 
                 res.on( 'close', () => {
                     !this.#silent ? console.log( 'Request closed' ) : ''
-                    this.#sendEvent( { channelName: 'sessionClosed', message: { protocol, 'sessionId': 'default' } } )
+                    this.#sendEvent( { channelName: 'sessionClosed', message: { protocol, routePath, 'sessionId': 'default' } } )
                     transport.close()
                     server.close()
                 } )
@@ -307,11 +307,11 @@ class RemoteServer {
             const transport = new SSEServerTransport( messagesPath, res )
             const { _sessionId } = transport
             this.#mcps[ protocol ]['sessionIds'][ _sessionId ] = { server, tools, transport }
-            this.#sendEvent( { channelName: 'sessionCreated', message: { protocol, 'sessionId': _sessionId } } )
+            this.#sendEvent( { channelName: 'sessionCreated', message: { protocol, routePath, 'sessionId': _sessionId } } )
 
             res.on('close', () => {
                 delete this.#mcps[ protocol ]['sessionIds'][ _sessionId ]
-                this.#sendEvent( { channelName: 'sessionClosed', message: { protocol, 'sessionId': _sessionId } } )
+                this.#sendEvent( { channelName: 'sessionClosed', message: { protocol, routePath, 'sessionId': _sessionId } } )
             } )
 
             await server.connect( transport )
@@ -334,7 +334,7 @@ class RemoteServer {
                 const method = req.body?.method || 'unknown'
                 const toolName = req.body?.params?.name
 
-                this.#sendEvent( { channelName: 'callReceived', message: { protocol, sessionId, method, toolName } } )
+                this.#sendEvent( { channelName: 'callReceived', message: { protocol, routePath, sessionId, method, toolName } } )
             } 
             else { res.status( 400 ).send( 'No transport found for sessionId' ) }
         } )

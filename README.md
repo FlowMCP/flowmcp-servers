@@ -11,6 +11,8 @@ This repository provides two server implementations compatible with the **FlowMC
 
 Deploy with DigitalOcean
 
+> An autodeploy is only available for a stateless server (streamableHTTP) . 
+
 [![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/flowmcp/flowmcp-servers/tree/main)
 
 
@@ -32,7 +34,7 @@ import { LocalServer } from 'flowmcp-server'
 import { FlowMCP } from 'flowmcp'
 import { SchemaImporter } from 'schemaimporter'
 
-const schemaList = await SchemaImporter.get({ withSchema: true })
+const schemaList = await SchemaImporter.get( { withSchema: true } )
 const arrayOfSchemas = schemaList.map(({ schema }) => schema)
 
 const { activationPayloads } = FlowMCP.prepareActivations({ arrayOfSchemas })
