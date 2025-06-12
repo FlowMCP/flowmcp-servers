@@ -1,9 +1,9 @@
 import express from 'express'
-import { randomUUID } from 'node:crypto'
+// import { randomUUID } from 'node:crypto'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js"
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
+// import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 import { FlowMCP } from 'flowmcp'
 import { Event } from './../task/Event.mjs'
 
