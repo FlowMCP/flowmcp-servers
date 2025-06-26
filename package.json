@@ -1,13 +1,13 @@
 {
   "name": "flowmcp-server",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "./src/index.mjs",
   "directories": {
     "test": "test"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start:local":  "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=local --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=sse --routePath=/flowmcp",
+    "start:local": "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=local --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=sse --routePath=/flowmcp",
     "start:remote": "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=remote --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=sse --routePath=/flowmcp",
     "start:digitalocean": "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=remote --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=statelessStreamable --routePath=/flowmcp",
     "inspector": "npx @modelcontextprotocol/inspector node tests/3-simpler-plus-see.mjs"
@@ -17,12 +17,11 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@modelcontextprotocol/inspector": "^0.13.0",
-    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@modelcontextprotocol/sdk": "^1.13.2",
     "flowmcp": "github:flowmcp/flowmcp#a1523aa60699e168a6c7b4ec923ac5ee4f15d89a"
   },
   "devDependencies": {
-    "@modelcontextprotocol/inspector": "^0.13.0",
+    "@modelcontextprotocol/inspector": "^0.14.3",
     "schemaimporter": "github:flowmcp/flowMCP-schemas#3d378b3a61452126c833d667a9189ca578813c48"
   }
 }
