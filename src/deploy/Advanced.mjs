@@ -6,18 +6,26 @@ class DeployAdvanced {
     static #server
 
 
-    static init( { silent, arrayOfSchemas, serverConfig, envObject } ) {
-        this.#validateInit( { silent, arrayOfSchemas, serverConfig, envObject } ) 
+    static init( { silent, serverConfig } ) {
+        // this.#validateInit( { silent, arrayOfSchemas, serverConfig, envObject } ) 
 
-        const { routes, config } = serverConfig
-
-        const { rootUrl, port } = config
-        const remoteServer = new RemoteServer( { silent } )
+        const { config } = serverConfig
+        this.#server = new RemoteServer( { silent } )
 
         if( Object.keys( config ).length === 0 ) {
-            remoteServer
-                .setConfig( { 'overwrite': config } )
+            this.#server.setConfig( { 'overwrite': config } )
         }
+
+        const app = this.#server.getApp()
+        const mcps = this.#server.getMcps()
+        const events = this.#server.getEvents()
+
+        return { serverType: 'multipleRoutes', app, mcps, events, argvs: null  }
+    }
+
+
+    static addRoutes( { serverConfig, arrayOfSchemas, envObject } ) {
+        const { routes } = serverConfig
         routes
             .map( ( route ) => {
                 const { includeNamespaces, excludeNamespaces, activateTags } = route
@@ -42,18 +50,12 @@ class DeployAdvanced {
                 return route
             } )
             .forEach( ( { activationPayloads, routePath, transportProtocols, bearerToken } ) => {
-                remoteServer
+                this.#server
                     .addActivationPayloads( { activationPayloads, routePath, transportProtocols, bearerToken } )
             } )
-        this.#server = remoteServer
 
-        const app = remoteServer.getApp()
-        const mcps = remoteServer.getMcps()
-        const events = remoteServer.getEvents()
-
-        return { serverType: 'multipleRoutes', app, mcps, events, argvs: null  }
+        return true
     }
-
 
     static start() {
         this.#server.start()

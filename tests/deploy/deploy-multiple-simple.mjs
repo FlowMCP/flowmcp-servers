@@ -55,8 +55,15 @@ const { envObject } = getEnvObject( {
 const { serverType, app, mcps, events, argv } = DeployAdvanced
     .init( { 
         'silent': false, 
-        arrayOfSchemas, 
+        // arrayOfSchemas, 
         serverConfig,
+        // envObject
+    } )
+
+DeployAdvanced
+    .addRoutes( {
+        serverConfig,
+        arrayOfSchemas,
         envObject
     } )
 
