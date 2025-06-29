@@ -17,6 +17,36 @@ function getEnvObject( { envPath } ) {
 }
 
 
+const config = {
+    'silent': false, // optional, default: false
+    'envPath': './../../.env',
+    'rootUrl': 'http://localhost', // optional
+    'port': 8080, // optional
+    'routes': [
+        { 
+            includeNamespaces: [ 'luksoNetwork' ],
+            excludeNamespaces: [],
+            activateTags: [],
+            routePath: '/one',
+            protocol: 'sse',
+            bearerToken: null 
+        },
+        { 
+            includeNamespaces: [ 'defillama' ],
+            excludeNamespaces: [],
+            activateTags: [],
+            routePath: '/two',
+            protocol: 'sse',
+            bearerToken: null
+        }
+    ]
+}
+
+
+const { envPath, routes, silent, rootUrl, port } = config
+const { envObject } = getEnvObject( { envPath } )
+const { serverType, app, mcps, events, argv, server } = DeployAdvanced
+    .init( { silent } )
 const arrayOfSchemas = await SchemaImporter
     .loadFromFolder( {
         excludeSchemasWithImports: true,
@@ -25,47 +55,9 @@ const arrayOfSchemas = await SchemaImporter
         outputType: 'onlySchema'
     } )
 
-const serverConfig = {
-    'config': {},
-    'routes': [
-        {
-            'routePath': '/luksoNetwork',
-            'bearerToken': '1234',
-            'transportProtocols': [ 'sse' ],
-            'includeNamespaces': [ 'luksoNetwork' ],
-            'excludeNamespaces': [],
-            'activateTags': [],
-        },
-        {
-            'routePath': '/defillama',
-            'bearerToken': '1234',
-            'transportProtocols': [ 'sse' ],
-            'includeNamespaces': [ 'defillama' ],
-            'excludeNamespaces': [],
-            'activateTags': [],
-        }
-    ]
-}
-
-
-const { envObject } = getEnvObject( {  
-    envPath: './../../.env'
+app.get( '/', ( req, res ) => {
+    res.send( `Test 123` )
 } )
-
-const { serverType, app, mcps, events, argv } = DeployAdvanced
-    .init( { 
-        'silent': false, 
-        // arrayOfSchemas, 
-        serverConfig,
-        // envObject
-    } )
-
-DeployAdvanced
-    .addRoutes( {
-        serverConfig,
-        arrayOfSchemas,
-        envObject
-    } )
 
 events
     .on( 'sessionCreated', ( { protocol, routePath, sessionId } ) => {
@@ -77,5 +69,5 @@ events
         return true
     } )
 
-
-DeployAdvanced.start()
+DeployAdvanced
+    .start( { routes, arrayOfSchemas, envObject, rootUrl, port } )

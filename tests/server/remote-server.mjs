@@ -27,6 +27,13 @@ function getEnvObject( { source, envPath } ) {
 }
 
 
+const config = {
+    'silent': false,
+    'envPath': './../../.env',
+    'routes': [ { includeNamespaces: [ ], routePath: '/one', protocol: 'sse', bearerToken: null } ]
+}
+
+const { silent, envPath, routes } = config
 const { includeNamespaces, excludeNamespaces, activateTags, source } = FlowMCP
     .getArgvParameters( {
         'argv': process.argv,
@@ -34,39 +41,20 @@ const { includeNamespaces, excludeNamespaces, activateTags, source } = FlowMCP
         'excludeNamespaces': [],
         'activateTags': [], 
     } )
-const { envObject } = getEnvObject( { 
-    source,
-    envPath: './../../.env'
-} )
-
+const { envObject } = getEnvObject( { source, envPath } )
 const arrayOfSchemas = await SchemaImporter
     .loadFromFolder( {
         excludeSchemasWithImports: true,
-        excludeSchemasWithRequiredServerParams: false,
+        excludeSchemasWithRequiredServerParams: true,
         addAdditionalMetaData: true,
         outputType: 'onlySchema'
     } )
 
-const { filteredArrayOfSchemas } = FlowMCP
-    .filterArrayOfSchemas( { 
-        arrayOfSchemas, 
-        includeNamespaces, 
-        excludeNamespaces, 
-        activateTags 
-    } )
-
-const { activationPayloads } = FlowMCP
-    .prepareActivations( { 
-        'arrayOfSchemas': filteredArrayOfSchemas, 
-        envObject
-    } )
-
-
-const remoteServer = new RemoteServer( { silent: false } )
+const remoteServer = new RemoteServer( { silent } )
+const { routesActivationPayloads } = RemoteServer
+    .prepareRoutesActivationPayloads( { routes, arrayOfSchemas, envObject } )
 remoteServer
-    .addActivationPayloads( { 
-        activationPayloads, 
-        routePath: '/this', 
-        transportProtocols: [ 'sse' ] 
-    } )
-remoteServer.start()
+    .start( { routesActivationPayloads } )
+
+
+

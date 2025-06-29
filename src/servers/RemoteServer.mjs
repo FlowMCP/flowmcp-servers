@@ -1,61 +1,53 @@
+// version 2 - with optional port and rootUrl in start()
+
 import express from 'express'
-// import { randomUUID } from 'node:crypto'
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js"
-// import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 import { FlowMCP } from 'flowmcp'
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js'
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
+
 import { Event } from './../task/Event.mjs'
 
 
 class RemoteServer {
     #app
-    #config
-    #state
+    #mcps = {}
     #silent
-    #mcps
+    #config
     #events
+    #routeAuth = {}
 
 
-    constructor( { silent = false } = {} ) {
-        this.#silent = silent || false
-        this.#config = { 
-            'rootUrl': 'http://localhost', 
-            'port': 8080, 
-            'suffixes': {
-                'sse': '/sse',
-                'stickyStreamable': '/sticky',
-                'statelessStreamable': '/stateless'
+    constructor( { silent = false } ) {
+        this.#silent = silent
+        this.#config = {
+            rootUrl: 'http://localhost',
+            port: 8080,
+            suffixes: {
+                sse: '/sse',
+                streamable: '/streamable'
             },
-            'serverDescription': {
-                'name': 'Remote Server',
-                'description': 'A remote Model Context Protocol server',
-                'version': '1.2.0'
+            serverDescription: {
+                name: 'Remote Server',
+                description: 'A remote Model Context Protocol server',
+                version: '1.0.0'
             }
         }
         this.#events = new Event()
-        this.#mcps = {
-            'sse': { 'sessionIds': {} },
-            'statelessStreamable': { 'sessionIds': {} }
-        }
-
-        this.#state = {
-            'routes': []
-            // 'stickyTransports': { 'sse': {}, 'http': {} }
-        }
 
         this.#app = express()
         this.#app.use( express.json() )
-
-        return true
+        this.#app.use( this.#bearerAuthMiddleware.bind( this ) )
     }
 
 
     setConfig( { overwrite } ) {
         const allowedKeys = [ 'rootUrl', 'port', 'suffixes' ]
-        if( !Object.keys( overwrite ).every( key => allowedKeys.includes( key ) ) ) {
-            throw new Error( `Invalid keys in config: ${userKeys.filter( key => !allowedKeys.includes( key ) ).join( ', ' )}` )
+
+        if( !Object.keys( overwrite ).every( ( key ) => allowedKeys.includes( key ) ) ) {
+            throw new Error( `Invalid keys in config: ${Object.keys( overwrite ).filter( ( key ) => !allowedKeys.includes( key ) ).join( ', ' )}` )
         }
+
         Object
             .entries( overwrite )
             .forEach( ( [ key, value ] ) => {
@@ -63,6 +55,11 @@ class RemoteServer {
             } )
 
         return true
+    }
+
+
+    getEvents() {
+        return this.#events
     }
 
 
@@ -76,361 +73,285 @@ class RemoteServer {
     }
 
 
-    getEvents() {
-        return this.#events
+    static prepareRoutesActivationPayloads( { routes, arrayOfSchemas, envObject } ) {
+        const routesActivationPayloads = routes
+            .
+            reduce( ( acc, route ) => {
+                const { includeNamespaces: iN, excludeNamespaces: eN, activateTags: aT, routePath, protocol, bearerToken } = route
+                const { includeNamespaces, excludeNamespaces, activateTags } = [
+                    [ 'includeNamespaces', iN ],
+                    [ 'excludeNamespaces', eN ],
+                    [ 'activateTags'     , aT ]
+                ]
+                    .reduce( ( acc, [ key, value ] ) => {
+                        acc[ key ] = value ?? []
+                        return acc
+                    }, {} )
+        
+                const { filteredArrayOfSchemas } = FlowMCP.filterArrayOfSchemas( { arrayOfSchemas, includeNamespaces, excludeNamespaces, activateTags } )
+                if( filteredArrayOfSchemas.length === 0 ) { throw new Error( `No schemas found for route: ${JSON.stringify( route )}` ) }
+                    
+                const { activationPayloads } = FlowMCP.prepareActivations( { arrayOfSchemas: filteredArrayOfSchemas, envObject } )
+
+                acc.push( { routePath, protocol, bearerToken, activationPayloads } )
+                return acc
+            }, [] )
+
+        return { routesActivationPayloads }
     }
 
 
-    async addActivationPayloads( { routePath, activationPayloads, transportProtocols, bearerToken } ) {
-        this.#validateSetRoute( { routePath, activationPayloads, transportProtocols } )
-        const authMiddleware = bearerToken ? this.#setBearerTokenValidation( { bearerToken } ) : null
-        const payload = { routePath, activationPayloads }
+    start( { routesActivationPayloads, rootUrl, port } ) {
+        const finalRootUrl = rootUrl !== undefined ? rootUrl : this.#config.rootUrl
+        const finalPort = port !== undefined ? port : this.#config.port
 
-        await Promise.all(
-            transportProtocols
-                .map( async( protocol ) => {
-                    if( protocol === 'sse' ) { this.#setStickySseRoute( payload, authMiddleware, protocol ) }
-                    // else if( protocol === 'stickyStreamable' ) { this.#setStickyStreamableRoute( payload, authMiddleware, protocol ) }
-                    else if( protocol === 'statelessStreamable' ) { await this.#setStatelessStreamableRoute( payload , authMiddleware, protocol ) }
-                    else { console.warn( `Unknown transport protocol: ${protocol}` ) }
-
-                    return true
-                } )
-        )
-
-        return true
-    }
-
-
-    start() {
-        const { rootUrl, port } = this.#config
-        const server = this.#app.listen( port, () => {
-            this.#printRoutes()
+        const { status, messages } = RemoteServer.#validationStart( {
+            routesActivationPayloads,
+            rootUrl: finalRootUrl,
+            port: finalPort
         } )
+        if( !status ) {
+            throw new Error( `Validation failed: ${messages.join( ', ' )}` )
+        }
 
-        process.on( 'SIGINT', () => {
-            server.close(() => {
-                this.#silent ? console.log("HTTP server closed.") : ''
-                process.exit()
+        routesActivationPayloads
+            .forEach( ( { includeNamespaces, routePath, protocol, bearerToken, activationPayloads } ) => {
+                this.#mcps[ routePath ] = { sessionIds: {}, activationPayloads }
+
+                if( typeof bearerToken === 'string' && bearerToken !== '' ) {
+                    this.#routeAuth[ routePath ] = bearerToken.toLowerCase()
+                }
+
+                this.#initRoute( { protocol, routePath } )
             } )
+
+        this.#app.listen( finalPort, () => {
+            if( !this.#silent ) {
+                console.log( `\n🚀 Server is running on ${finalRootUrl}:${finalPort}` )
+                console.log( '📜 Available Routes:' )
+
+                routesActivationPayloads
+                    .forEach( ( { routePath, protocol, bearerToken, activationPayloads } ) => {
+                        const suffix = this.#config.suffixes[ protocol ] || ''
+                        const tokenMsg = ( typeof bearerToken === 'string' && bearerToken !== '' )
+                            ? `Authorization:  Bearer ${bearerToken}`
+                            : 'Authorization:  '
+
+                        const schemaCount = ( activationPayloads || [] ).length
+                        const toolsCount = activationPayloads
+                            .reduce( ( acc, { schema } ) => {
+                                const count = Object.keys( schema.routes || {} ).length
+                                return acc + count
+                            }, 0 )
+                        const n = activationPayloads
+                            .map( ( { schema } ) => schema.namespace )
+                            .filter( ( v, i, a ) => a.indexOf( v ) === i )
+
+                        console.log( `- URL:            ${finalRootUrl}:${finalPort}${routePath}${suffix}` )
+                        console.log( `  Transport Type: ${protocol}` )
+                        console.log( `  ${tokenMsg}` )
+                        console.log( `  Namespaces:     ${n.join( ', ' )}` )
+                        console.log( `  Schemas:        ${schemaCount}, Tools: ${toolsCount}` )
+
+                    } )
+            }
         } )
 
-        return true
+        return { result: true }
     }
 
 
-    #validateSetRoute( { routePath, activationPayloads, transportProtocols } ) {
-        const messages = []
-        if( !routePath || typeof routePath !== 'string' || !routePath.startsWith('/') ) {
-            messages.push( 'Invalid routePath. It must be a string starting with "/".' )
+    #initRoute( { protocol, routePath } ) {
+        const suffix = this.#config.suffixes[ protocol ] || '/sse'
+        const fullPath = `${routePath}${suffix}`
+
+        const authMiddleware = ( req, res, next ) => {
+            const token = this.#routeAuth[ routePath ]
+
+            if( !token ) { return next() }
+
+            const auth = req.headers[ 'authorization' ]
+            if( !auth || !auth.toLowerCase().startsWith( 'bearer ' ) || auth.split( ' ' )[ 1 ]?.toLowerCase() !== token ) {
+                res
+                    .status( 403 )
+                    .json( { error: 'Forbidden: Invalid or missing bearer token' } )
+            } else {
+                next()
+            }
         }
 
-        if( !Array.isArray( activationPayloads ) || activationPayloads.length === 0 ) {
-            messages.push( 'activationPayloads must be a non-empty array.' )
-        } else {
-            activationPayloads
-                .forEach( ( obj, index ) => {
-                    if( typeof obj !== 'object' ) {
-                        messages.push( `activationPayloads[${index}] must be an object.` )
-                        return false
-                    }
-                    const { server, schema, serverParams, activateTags } = obj
-                    const n = [ 
-                        // [ 'server',       server       ], 
-                        [ 'schema',       schema       ], 
-                        [ 'serverParams', serverParams ]
-                    ]
-                        .forEach( ( [ name, value ] ) => {
-                            if( !obj[ name ] ) {
-                                messages.push( `activationPayloads[${index}] is missing required property: ${name}` )
-                            }
+        if( protocol === 'sse' ) {
+            const messagesPath = `${routePath}/post`
+
+            this.#app.get( fullPath, authMiddleware, async ( req, res ) => {
+                const server = new McpServer( this.#config.serverDescription )
+
+                this.#mcps[ routePath ].activationPayloads
+                    .forEach( ( { schema } ) => {
+                        FlowMCP.activateServerTools( {
+                            server,
+                            schema,
+                            serverParams: {},
+                            activateTags: [],
+                            silent: true
                         } )
-                } )
-        }
+                    } )
 
-        const validProtocols = Object.keys( this.#config.suffixes )
-        if( !Array.isArray( transportProtocols ) || transportProtocols.length === 0 ) {
-            messages.push( `transportProtocols must be a non-empty array. Valid protocols are: ${validProtocols.join(', ')}` )
-        } else {
-            transportProtocols
-                .forEach( ( protocol, index ) => {
-                    if( !validProtocols.includes( protocol ) ) {
-                        messages.push( `transportProtocols[${index}] is not a valid protocol. Valid protocols are: ${validProtocols.join(', ')}` )
-                    }
-                } )
-        }
+                const transport = new SSEServerTransport( messagesPath, res )
+                const sessionId = transport._sessionId
 
-        if( messages.length > 0 ) {
-            throw new Error( `Validation failed:\n- ${messages.join( '\n- ' )}` )
-        }
+                this.#mcps[ routePath ].sessionIds[ sessionId ] = {
+                    server,
+                    transport
+                }
 
-        return true
-    }
+                if( !this.#silent ) {
+                    console.log( `📱 Session created: ${sessionId}` )
+                }
 
-
-    async #setStatelessStreamableRoute( { routePath, activationPayloads }, authMiddleware, protocol ) {
-        let { fullPath } = this
-            .#getRoute( { routePath, protocol } )
-        const middlewares = authMiddleware ? [authMiddleware] : []
-
-        var server = new McpServer( { name: "", version: "1.0.0" } )
-        const { activatedMcpTools: tools } = this.#injectFlowMCP( { server, activationPayloads, protocol } )
-
-        this.#app.post( fullPath, ...middlewares, async ( req, res ) => {
-            try {
-                const transport = new StreamableHTTPServerTransport( {
-                    sessionIdGenerator: undefined,
-                } )
-                
-                this.#mcps[ protocol ]['sessionIds'][ 'default' ] = { server, tools, transport }
-                this.#sendEvent( { channelName: 'sessionCreated', message: { protocol, routePath, 'sessionId': 'default' } } )
+                this.#sendEvent( { channelName: 'sessionCreated', message: { protocol, routePath, sessionId } } )
 
                 res.on( 'close', () => {
-                    !this.#silent ? console.log( 'Request closed' ) : ''
-                    this.#sendEvent( { channelName: 'sessionClosed', message: { protocol, routePath, 'sessionId': 'default' } } )
-                    transport.close()
-                    server.close()
-                } )
+                    delete this.#mcps[ routePath ].sessionIds[ sessionId ]
 
-                await server.connect( transport )
-                await transport.handleRequest( req, res, req.body )
-            } catch( error ) {
-                console.error('Error handling MCP request:', error)
-                if (!res.headersSent) {
-                res
-                    .status( 500 )
-                    .json( {
-                        jsonrpc: '2.0',
-                        error: { code: -32603, message: 'Internal server error' },
-                        id: null,
-                    } )
-                }
-            }
-        } )
-
-        this.#app.get( fullPath, ...middlewares, async ( req, res ) => {
-            !this.#silent ? console.log( 'Received GET MCP request' ) : ''
-            res
-                .writeHead( 405 )
-                .end( 
-                    JSON.stringify( {
-                        jsonrpc: '2.0',
-                        error: { code: -32000, message: 'Method not allowed.' },
-                        id: null
-                    } ) 
-                )
-        } )
-
-        this.#app.delete( fullPath, ...middlewares, async ( req, res ) => {
-            !this.#silent ? console.log( 'Received DELETE MCP request' ) : ''
-            res
-                .writeHead( 405 )
-                .end(
-                    JSON.stringify( {
-                        jsonrpc: '2.0',
-                        error: { code: -32000, message: 'Method not allowed.' },
-                        id: null
-                    } )
-                )
-        } )
-
-        return true
-    }
-
-/*
-    #setStickyStreamableRoute( { routePath, activationPayloads }, authMiddleware, protocol ) {
-        let { fullPath } = this
-            .#getRoute( { routePath, protocol } )
-        const middlewares = authMiddleware ? [authMiddleware] : []
-
-        const server = new McpServer({ name: 'example-server', version: '1.0.0' })
-        const { activatedMcpTools: tools } = this.#injectFlowMCP( { server, activationPayloads, protocol } )
-
-        this.#app.post( fullPath, ...middlewares, async( req, res ) => {
-            const sessionId = req.headers['mcp-session-id']
-            !this.#silent ? console.log(`Incoming POST request at ${fullPath} with session ID: ${sessionId}`) : ''
-
-            let transport
-            if( sessionId && this.#mcps[ protocol ]['sessionIds'][ sessionId ] ) {
-                !this.#silent ? console.log( `Reusing existing session: ${sessionId}` ) : ''
-                transport = this.#mcps[ protocol ]['sessionIds'][ sessionId ]['transport']
-            } else if( !sessionId && isInitializeRequest( req.body ) ) {
-                !this.#silent ? console.log( `Initializing new session` ) : ''
-                transport = new StreamableHTTPServerTransport( {
-                    sessionIdGenerator: () => randomUUID(),
-                    onsessioninitialized: ( newSessionId ) => {
-                        !this.#silent ? console.log(`Session initialized: ${newSessionId}`) : ''
-                        this.#mcps[ protocol ]['sessionIds'][ transport.sessionId ] = { server, tools, transport }
-                        console.log( Object.keys( this.#mcps[ protocol ]['sessionIds'] ).length, 'sessions active' )
-                        this.#sendEvent( { channelName: 'sessionCreated', message: { protocol, sessionId: newSessionId } } )
+                    if( !this.#silent ) {
+                        console.log( `❌ Session closed: ${sessionId}` )
                     }
+
+                    this.#sendEvent( { channelName: 'sessionClosed', message: { protocol, routePath, sessionId } } )
                 } )
 
                 await server.connect( transport )
-
-                transport.onclose = () => {
-                    console.log(`Session closed: ${transport.sessionId}`)
-                    !this.#silent ? console.log(`Session closed: ${transport.sessionId}`) : ''
-                    delete this.#mcps[ protocol ]['sessionIds'][ transport.sessionId ]
-                    this.#sendEvent( { channelName: 'sessionClosed', message: { protocol, sessionId: transport.sessionId } } )
-                }
-
-            } else {
-                !this.#silent ? console.warn(`Invalid request: No valid session ID`) : ''
-                res.status(400).json({
-                    jsonrpc: '2.0',
-                    error: { code: -32000, message: 'Bad Request: No valid session ID provided' },
-                    id: null
-                })
-                return
-            }
-
-            await transport.handleRequest( req, res, req.body )
-        } )
-
-        this.#app.get( fullPath, ...middlewares, ( req, res ) => this.#handleSessionRequest( { req, res, protocol } ) )
-        this.#app.delete( fullPath, ...middlewares, ( req, res ) => this.#handleSessionRequest( { req, res, protocol } ) )
-
-        return true
-    }
-*/
-
-    #setStickySseRoute( { routePath, activationPayloads }, authMiddleware, protocol ) {
-        const { fullPath, messagesPath } = this
-            .#getRoute( { routePath, protocol } )
-        const middlewares = authMiddleware ? [ authMiddleware ] : []
-
-        this.#app.get( fullPath, ...middlewares, async ( req, res ) => {
-            const server = new McpServer( { name: 'backwards-compatible-server', version: '1.0.0' } )
-            const { activatedMcpTools: tools } = this.#injectFlowMCP( { server, activationPayloads, protocol } )
-
-            const transport = new SSEServerTransport( messagesPath, res )
-            const { _sessionId } = transport
-            this.#mcps[ protocol ]['sessionIds'][ _sessionId ] = { server, tools, transport }
-            this.#sendEvent( { channelName: 'sessionCreated', message: { protocol, routePath, 'sessionId': _sessionId } } )
-
-            res.on('close', () => {
-                delete this.#mcps[ protocol ]['sessionIds'][ _sessionId ]
-                this.#sendEvent( { channelName: 'sessionClosed', message: { protocol, routePath, 'sessionId': _sessionId } } )
             } )
 
-            await server.connect( transport )
-        } )
+            this.#app.post( messagesPath, authMiddleware, async ( req, res ) => {
+                const { sessionId } = req.query
+                const entry = this.#mcps[ routePath ].sessionIds[ sessionId ]
 
-        this.#app.post( messagesPath, ...middlewares, async ( req, res ) => {
-            const { sessionId } = req.query
-            if( typeof sessionId !== 'string' ) {
-                res.status(400).send( 'Invalid sessionId' )
-                return
-            } else if( Object.hasOwn( this.#mcps[ protocol ]['sessionIds'], sessionId ) === false ) {
-                res.status( 400 ).send( 'SessionId not found' )
-                return
-            } 
+                if( !entry ) {
+                    res
+                        .status( 400 )
+                        .send( 'Invalid sessionId' )
 
-            let transport = this.#mcps[ protocol ]['sessionIds'][ sessionId ]['transport']
+                    return
+                }
 
-            if( transport ) { 
-                await transport.handlePostMessage( req, res, req.body ) 
+                const method = req.body?.method || 'unknown'
+                const toolName = req.body?.params?.name
+
+                if( !this.#silent ) {
+                    console.log( `⚙️ Tool called: method=${method}, toolName=${toolName}, sessionId=${sessionId}` )
+                }
+
+                this.#sendEvent( { channelName: 'callReceived', message: { protocol, routePath, sessionId, method, toolName } } )
+
+                await entry.transport.handlePostMessage( req, res, req.body )
+            } )
+        }
+
+        if( protocol === 'streamable' ) {
+            this.#app.post( fullPath, authMiddleware, async ( req, res ) => {
+                const server = new McpServer( this.#config.serverDescription )
+
+                this.#mcps[ routePath ].activationPayloads
+                    .forEach( ( { schema } ) => {
+                        FlowMCP.activateServerTools( {
+                            server,
+                            schema,
+                            serverParams: {},
+                            activateTags: [],
+                            silent: true
+                        } )
+                    } )
+
+                const transport = new StreamableHTTPServerTransport( {} )
+
+                const sessionId = 'stateless'
+
+                this.#mcps[ routePath ].sessionIds[ sessionId ] = {
+                    server,
+                    transport
+                }
+
                 const method = req.body?.method || 'unknown'
                 const toolName = req.body?.params?.name
 
                 this.#sendEvent( { channelName: 'callReceived', message: { protocol, routePath, sessionId, method, toolName } } )
-            } 
-            else { res.status( 400 ).send( 'No transport found for sessionId' ) }
-        } )
 
-        return true
-    }
+                await server.connect( transport )
+                await transport.handleRequest( req, res, req.body )
 
-/*
-    async #handleSessionRequest( { req, res, protocol  } ) {
-        const sessionId = req.headers['mcp-session-id']
-        if (!sessionId || !this.#mcps[ protocol ]['sessionIds'][ sessionId ] ) {
-            res.status( 400 ).send( 'Invalid or missing session ID' )
-            return
-        }
-
-        const transport = this.#mcps[ protocol ]['sessionIds'][ sessionId ]['transport']
-        await transport.handleRequest(req, res)
-    }
-*/
-
-    #printRoutes() {
-        const { rootUrl, port } = this.#config
-        !this.#silent ? console.log(`🚀 Server is running on ${rootUrl}:${port}`) : ''
-        !this.#silent ? console.log('📜 Available Routes:') : ''
-        
-        this.#state['routes']
-            .forEach(route => {
-                !this.#silent ? console.log(`-  ${rootUrl}:${port}${route}`) : ''
+                delete this.#mcps[ routePath ].sessionIds[ sessionId ]
             } )
-
-        return true
-    }
-
-    
-    #getRoute( { routePath, protocol } ) {
-        if( !routePath.startsWith( '/' ) ) { routePath = `/${routePath}` }
-        const { suffixes } = this.#config
-        const suffix = this.#config['suffixes'][ protocol ]
-        const keyName = `fullPath`
-        const struct = {}
-        struct[ keyName ] = `${routePath}${suffix}`
-        if( protocol === 'sse' ) { struct['messagesPath'] = `${struct[ keyName ]}/messages` }
-
-        Object
-            .values( struct )
-            .forEach( route => { this.#state['routes'].push( route ) } )
-
-        return struct
-    }
-
-
-    #injectFlowMCP( { server, activationPayloads } ) {
-        const activatedMcpTools = activationPayloads
-            .reduce( ( acc, { serverParams, schema, activateTags } ) => {
-                // set silent to true because in sse every user has its own server instance.
-                const { mcpTools } = FlowMCP
-                    .activateServerTools( { server, schema, serverParams, activateTags, 'silent': true } )
-                Object
-                    .entries( mcpTools )
-                    .forEach( ( [ key, value ] ) => {
-                        acc[ key ] = value
-                    } )
-
-                return acc
-            }, {} )
-
-        return { activatedMcpTools }
-    }
-
-
-    #setBearerTokenValidation( { bearerToken } ) {
-        !this.#silent ? console.log( `Activate Header: Authorization "Bearer ${bearerToken}"` ) : ''
-        return ( req, res, next ) => {
-            // !this.#silent ? console.log( 'Authorization middleware triggered', req.headers ) : ''
-            const authHeader = req.headers['authorization']
-            if( typeof authHeader !== 'string' || !authHeader.startsWith( 'Bearer ' ) ) {
-                return res
-                    .status( 401 )
-                    .json( { error: 'Missing or malformed Authorization header' } )
-            }
-
-            const token = `${authHeader}`.replaceAll( 'Bearer ', '' )
-            if( token !== bearerToken ) {
-                return res
-                    .status( 403 )
-                    .json( { error: 'Invalid Veritoken' } )
-            }
-
-            next()
         }
+
+        return { result: true }
+    }
+
+
+    #bearerAuthMiddleware( req, res, next ) {
+        next()
     }
 
 
     #sendEvent( { channelName, message } ) {
         this.#events.sendEvent( { channelName, message } )
+
         return true
+    }
+
+
+    static #validationStart( { routesActivationPayloads, rootUrl, port } ) {
+        const struct = { status: false, messages: [] }
+
+        if( routesActivationPayloads === undefined ) {
+            struct[ 'messages' ].push( 'routesActivationPayloads: Is required' )
+        } else if( !Array.isArray( routesActivationPayloads ) ) {
+            struct[ 'messages' ].push( 'routesActivationPayloads: Must be an array' )
+        }
+
+        if( rootUrl !== undefined && typeof rootUrl !== 'string' ) {
+            struct[ 'messages' ].push( 'rootUrl: Must be a string' )
+        }
+
+        if( port !== undefined && typeof port !== 'number' ) {
+            struct[ 'messages' ].push( 'port: Must be a number' )
+        }
+
+        if( struct[ 'messages' ].length > 0 ) {
+            return struct
+        }
+
+        routesActivationPayloads
+            .forEach( ( entry, index ) => {
+                const { routePath, protocol, bearerToken, activationPayloads } = entry
+                const specs = [
+                    [ 'routePath', routePath, 'string', null ],
+                    [ 'protocol', protocol, 'string', [ 'sse', 'streamable' ] ],
+                    [ 'activationPayloads', activationPayloads, 'object', null ]
+                ]
+
+                specs
+                    .forEach( ( [ key, value, type, list ] ) => {
+                        if( value === undefined || value === null ) {
+                            struct[ 'messages' ].push( `routesActivationPayloads[${index}].${key}: Is required` )
+                        } else if( type === 'object' && !Array.isArray( value ) ) {
+                            struct[ 'messages' ].push( `routesActivationPayloads[${index}].${key}: Must be an array` )
+                        } else if( type === 'string' && typeof value !== 'string' ) {
+                            struct[ 'messages' ].push( `routesActivationPayloads[${index}].${key}: Must be a string` )
+                        } else if( type === 'string' && list !== null && !list.includes( value ) ) {
+                            struct[ 'messages' ].push( `routesActivationPayloads[${index}].${key}: Invalid value "${value}". Allowed are ${list.join( ', ' )}` )
+                        }
+                    } )
+
+                if( bearerToken !== null && typeof bearerToken !== 'string' ) {
+                    struct[ 'messages' ].push( `routesActivationPayloads[${index}].bearerToken: Must be a string or null` )
+                }
+            } )
+
+        struct[ 'status' ] = struct[ 'messages' ].length === 0
+
+        return struct
     }
 }
 

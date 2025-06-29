@@ -1,12 +1,17 @@
+import { Parameters } from '../task/Parameters.mjs'
+import { FlowMCP } from 'flowmcp'
+import { RemoteServer } from '../servers/RemoteServer.mjs'
+
+
 class Deploy {
     static #serverClass
 
 
     static init( { argv, processEnv, arrayOfSchemas } ) {
         const { argvs, envObject } = Parameters
-            .getParameters( { argv,processEnv,arrayOfSchemas } )
+            .getParameters( { argv, processEnv, arrayOfSchemas } )
         const { serverType, activateTags, excludeNamespaces, includeNamespaces } = argvs
-
+  
         const { filteredArrayOfSchemas } = FlowMCP
             .filterArrayOfSchemas( { 
                 arrayOfSchemas, 
@@ -26,7 +31,7 @@ class Deploy {
             const { app: _a, mcps: _m, events: _e } = Deploy.#localServer( { argvs, activationPayloads } )
             app = _a; mcps = _m; events = _e
         } else if( serverType === 'remote' ) {
-            const { app: _a, mcps: _m, events: _e } = Deploy.#remoteServer( { argvs, activationPayloads } )
+            const { app: _a, mcps: _m, events: _e } = Deploy.#remoteServer( { argvs, arrayOfSchemas, envObject } )
             app = _a; mcps = _m; events = _e
         } else {
             throw new Error( `Unknown server type: ${serverType}` )
@@ -42,7 +47,7 @@ class Deploy {
             await server.start()
             !server.silent ? console.warn( 'Local Server started successfully.' ) : ''
         } else if( type === 'remote' ) {
-            server.start()
+            // server.start()
             !server.silent ? console.log( 'Remote Server started successfully.' ) : ''
         } else {
             throw new Error( `Unknown server type: ${type}` )
@@ -65,18 +70,24 @@ class Deploy {
     }
 
 
-    static #remoteServer( { argvs, activationPayloads } ) {
-        const { bearerToken, routePath, rootUrl, port, silent, transportProtocols } = argvs
+    static #remoteServer( { argvs, arrayOfSchemas, envObject } ) {
+        const { silent, transportProtocols } = argvs
         const remoteServer = new RemoteServer( { silent } )
-        remoteServer
-            .setConfig( { 'overwrite': { rootUrl, port } } )
-        remoteServer
-            .addActivationPayloads( { activationPayloads, routePath, transportProtocols, bearerToken } )
-        this.#serverClass = { 'type': 'remote', 'server': remoteServer }
-
         const app = remoteServer.getApp()
         const mcps = remoteServer.getMcps()
         const events = remoteServer.getEvents()
+        this.#serverClass = { 'type': 'remote', 'server': remoteServer }
+
+        const { includeNamespaces, excludeNamespaces, activateTags, routePath, bearerToken } = argvs
+        const routes = transportProtocols
+            .map( ( protocol ) => {
+                return { includeNamespaces, excludeNamespaces, activateTags, routePath, protocol, bearerToken }
+            } )
+
+        const { routesActivationPayloads } = RemoteServer
+            .prepareRoutesActivationPayloads( { routes, arrayOfSchemas, envObject } )
+        remoteServer
+            .start( { routesActivationPayloads } )
 
         return { app, mcps, events }
     }

@@ -22,12 +22,12 @@ class Parameters {
         ]
 
         const remoteServerParameters = [
-            [ '--bearerToken='       , 'bearerToken'       , 'string' , null                            ],
-            [ '--port='              , 'port'              , 'number' , 8080                            ],
-            [ '--rootUrl='           , 'rootUrl'           , 'string' , 'http://localhost'              ],
-            [ '--silent='            , 'silent'            , 'boolean', false                           ],
-            [ '--transportProtocols=', 'transportProtocols', 'array'  , [ 'sse', 'stickyStreamable' ]   ],
-            [ '--routePath='         , 'routePath'         , 'string' , '/flowmcp'                      ]
+            [ '--bearerToken='       , 'bearerToken'       , 'string' , null                      ],
+            [ '--port='              , 'port'              , 'number' , 8080                      ],
+            [ '--rootUrl='           , 'rootUrl'           , 'string' , 'http://localhost'        ],
+            [ '--silent='            , 'silent'            , 'boolean', false                     ],
+            [ '--transportProtocols=', 'transportProtocols', 'array'  , [ 'sse', 'streamable' ]   ],
+            [ '--routePath='         , 'routePath'         , 'string' , '/flowmcp'                ]
         ]
 
 

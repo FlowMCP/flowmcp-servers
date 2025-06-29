@@ -27,6 +27,13 @@ function getEnvObject( { source, envPath } ) {
 }
 
 
+const config = {
+    'silent': false,
+    'envPath': './../../.env',
+    'routes': [ { includeNamespaces: [], routePath: '/one', protocol: 'sse', bearerToken: null } ]
+}
+
+const { silent, envPath, routes } = config
 const { includeNamespaces, excludeNamespaces, activateTags, source } = FlowMCP
     .getArgvParameters( {
         'argv': process.argv,
@@ -34,54 +41,34 @@ const { includeNamespaces, excludeNamespaces, activateTags, source } = FlowMCP
         'excludeNamespaces': [],
         'activateTags': [], 
     } )
-const { envObject } = getEnvObject( { 
-    source,
-    envPath: './../../.env'
-} )
+const { envObject } = getEnvObject( { source, envPath } )
 
 const arrayOfSchemas = await SchemaImporter
     .loadFromFolder( {
         excludeSchemasWithImports: true,
-        excludeSchemasWithRequiredServerParams: false,
+        excludeSchemasWithRequiredServerParams: true,
         addAdditionalMetaData: true,
         outputType: 'onlySchema'
     } )
 
-const { filteredArrayOfSchemas } = FlowMCP
-    .filterArrayOfSchemas( { 
-        arrayOfSchemas, 
-        includeNamespaces, 
-        excludeNamespaces, 
-        activateTags 
-    } )
-
-
-const { activationPayloads } = FlowMCP
-    .prepareActivations( { 
-        arrayOfSchemas, 
-        envObject
-    } )
-
-const remoteServer = new RemoteServer( { silent: false } )
-remoteServer
-    .addActivationPayloads( { 
-        activationPayloads, 
-        routePath: '/this', 
-        transportProtocols: [ 'sse', 'statelessStreamable' ] 
-    } )
-remoteServer.start()
-const mcps = remoteServer.getMcps()
+const remoteServer = new RemoteServer( { silent } )
 const events = remoteServer.getEvents()
 events
     .on( 'sessionCreated', ( { protocol, sessionId } ) => {
         console.log( `Session created: Protocol: ${protocol}, Session ID: ${sessionId}` )
         return true
     } )
-events
     .on( 'callReceived', ( { protocol, sessionId, method, toolName } ) => {
         console.log( `Call: Protocol: ${protocol}, Session ID: ${sessionId}, method ${method}, toolName: ${toolName}` )
     } )
-events
     .on( 'sessionClosed', ( { protocol, sessionId } ) => {
         console.log( `Session closed: Protocol: ${protocol}, Session ID: ${sessionId}` )
     } )
+
+const { routesActivationPayloads } = RemoteServer
+    .prepareRoutesActivationPayloads( { routes, arrayOfSchemas, envObject } )
+remoteServer
+    .start( { routesActivationPayloads } )
+
+
+
