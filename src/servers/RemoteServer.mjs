@@ -185,13 +185,12 @@ class RemoteServer {
 
             this.#app.get( fullPath, authMiddleware, async ( req, res ) => {
                 const server = new McpServer( this.#config.serverDescription )
-
                 this.#mcps[ routePath ].activationPayloads
-                    .forEach( ( { schema } ) => {
+                    .forEach( ( { schema, serverParams } ) => {
                         FlowMCP.activateServerTools( {
                             server,
                             schema,
-                            serverParams: {},
+                            serverParams,
                             activateTags: [],
                             silent: true
                         } )
