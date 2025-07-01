@@ -21,4 +21,4 @@ jobs:
         run: npm ci
 
       - name: Run plain test
-        run: node tests/ci/local-server-plain.mjs
+        run: node .github/workflows/test-on-release.mjs
