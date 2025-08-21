@@ -1,15 +1,20 @@
 {
   "name": "flowmcp-server",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "main": "./src/index.mjs",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "test": "jest",
-    "start:local": "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=local --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=sse --routePath=/flowmcp",
-    "start:remote": "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=remote --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=sse --routePath=/flowmcp",
-    "start:digitalocean": "node ./tests/deploy/deploy-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=remote --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=statelessStreamable --routePath=/flowmcp",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --config=tests/unit/jest.config.mjs",
+    "test:parameters": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --config=tests/unit/jest.config.mjs parameters",
+    "test:localserver": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --config=tests/unit/jest.config.mjs LocalServer",
+    "test:remoteserver": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --config=tests/unit/jest.config.mjs RemoteServer",
+    "test:deploy": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --config=tests/unit/jest.config.mjs Deploy",
+    "test:namespace": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --config=tests/unit/jest.config.mjs NamespaceFiltering",
+    "start:local": "node ./tests/deploy/deploy-single-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=local --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=sse --routePath=/flowmcp",
+    "start:remote": "node ./tests/deploy/deploy-single-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=remote --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=sse --routePath=/flowmcp",
+    "start:digitalocean": "node ./tests/deploy/deploy-single-simple.mjs --includeNamespaces= --excludeNamespaces= --activateTags= --envType=file --envPath=.example.env --serverType=remote --bearerToken=1234 --port=8080 --rootUrl=http://localhost --silent=false --transportProtocols=statelessStreamable --routePath=/flowmcp",
     "inspector": "npx @modelcontextprotocol/inspector node tests/3-simpler-plus-see.mjs"
   },
   "keywords": [],
@@ -18,7 +23,7 @@
   "description": "",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.2",
-    "flowmcp": "github:flowmcp/flowmcp#a1523aa60699e168a6c7b4ec923ac5ee4f15d89a"
+    "flowmcp": "github:flowmcp/flowmcp#392a83ce82aaba822fab21c6cfdfac889e940529"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.27.2",

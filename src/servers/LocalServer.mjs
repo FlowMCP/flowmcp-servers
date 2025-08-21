@@ -30,7 +30,7 @@ class LocalServer {
      setConfig( { overwrite } ) {
         const allowedKeys = [ 'serverDescription' ]
         if( !Object.keys( overwrite ).every( key => allowedKeys.includes( key ) ) ) {
-            throw new Error( `Invalid keys in config: ${userKeys.filter( key => !allowedKeys.includes( key ) ).join( ', ' )}` )
+            throw new Error( `Invalid keys in config: ${Object.keys( overwrite ).filter( key => !allowedKeys.includes( key ) ).join( ', ' )}` )
         }
         Object
             .entries( overwrite )

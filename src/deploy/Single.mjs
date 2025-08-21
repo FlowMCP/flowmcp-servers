@@ -1,5 +1,6 @@
 import { Parameters } from '../task/Parameters.mjs'
 import { FlowMCP } from 'flowmcp'
+import { LocalServer } from '../servers/LocalServer.mjs'
 import { RemoteServer } from '../servers/RemoteServer.mjs'
 
 
@@ -42,12 +43,12 @@ class Deploy {
 
 
     static async start() {
-        const { type, server } = this.#serverClass
+        const { type, server, routesActivationPayloads } = this.#serverClass
         if( type === 'local' ) {
             await server.start()
             !server.silent ? console.warn( 'Local Server started successfully.' ) : ''
         } else if( type === 'remote' ) {
-            // server.start()
+            server.start( { routesActivationPayloads } )
             !server.silent ? console.log( 'Remote Server started successfully.' ) : ''
         } else {
             throw new Error( `Unknown server type: ${type}` )
@@ -76,8 +77,6 @@ class Deploy {
         const app = remoteServer.getApp()
         const mcps = remoteServer.getMcps()
         const events = remoteServer.getEvents()
-        this.#serverClass = { 'type': 'remote', 'server': remoteServer }
-
         const { includeNamespaces, excludeNamespaces, activateTags, routePath, bearerToken } = argvs
         const routes = transportProtocols
             .map( ( protocol ) => {
@@ -86,8 +85,8 @@ class Deploy {
 
         const { routesActivationPayloads } = RemoteServer
             .prepareRoutesActivationPayloads( { routes, arrayOfSchemas, envObject } )
-        remoteServer
-            .start( { routesActivationPayloads } )
+        
+        this.#serverClass = { 'type': 'remote', 'server': remoteServer, 'routesActivationPayloads': routesActivationPayloads }
 
         return { app, mcps, events }
     }
