@@ -1,6 +1,6 @@
 {
   "name": "flowmcp-server",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "main": "./src/index.mjs",
   "directories": {
     "test": "test"
@@ -23,13 +23,13 @@
   "description": "",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.2",
-    "flowmcp": "github:flowmcp/flowmcp#9bdeb70b8a4dacadff65c43675aa7173feff4d6e"
+    "flowmcp": "github:flowmcp/flowmcp#71467de2bade25dca04419def04de3f7ed8295d5"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.27.2",
     "@modelcontextprotocol/inspector": "^0.14.3",
     "babel-jest": "^30.0.2",
     "jest": "^30.0.3",
-    "schemaimporter": "github:flowmcp/flowMCP-schemas#5a921dc3e3c6dfc395a649d7ce9dd6329e601fbb"
+    "schemaimporter": "github:flowmcp/flowMCP-schemas#bf31ce2e1e7946a2a25102303d489c2507b57b94"
   }
 }
