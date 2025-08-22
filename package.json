@@ -23,13 +23,13 @@
   "description": "",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.2",
-    "flowmcp": "github:flowmcp/flowmcp#392a83ce82aaba822fab21c6cfdfac889e940529"
+    "flowmcp": "github:flowmcp/flowmcp#9bdeb70b8a4dacadff65c43675aa7173feff4d6e"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.27.2",
     "@modelcontextprotocol/inspector": "^0.14.3",
     "babel-jest": "^30.0.2",
     "jest": "^30.0.3",
-    "schemaimporter": "github:flowmcp/flowMCP-schemas#3d378b3a61452126c833d667a9189ca578813c48"
+    "schemaimporter": "github:flowmcp/flowMCP-schemas#5a921dc3e3c6dfc395a649d7ce9dd6329e601fbb"
   }
 }
