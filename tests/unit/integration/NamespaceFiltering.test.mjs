@@ -430,32 +430,41 @@ describe( 'Namespace and Tag Filtering Integration', () => {
             expect( result ).toHaveProperty( 'events' )
         } )
 
-        test( 'should handle DeployAdvanced with multiple routes and filtering', () => {
-            const routes = [
+        test( 'should handle DeployAdvanced with multiple routes and pre-filtered schemas', () => {
+            const arrayOfRoutes = [
                 {
-                    includeNamespaces: [ 'coingecko' ],
-                    excludeNamespaces: [],
-                    activateTags: [ 'production' ],
                     routePath: '/crypto',
                     protocol: 'sse',
                     bearerToken: 'crypto-token'
                 },
                 {
-                    includeNamespaces: [],
-                    excludeNamespaces: [ 'debug', 'test' ],
-                    activateTags: [ 'production' ],
                     routePath: '/production',
                     protocol: 'streamable',
                     bearerToken: 'prod-token'
                 }
             ]
 
+            // User has already filtered the schemas per route
+            const objectOfSchemaArrays = {
+                '/crypto': [
+                    // Only coingecko with production tag
+                    testSchemas.find( s => s.namespace === 'coingecko' && s.tags.includes( 'production' ) )
+                ],
+                '/production': [
+                    // Production schemas excluding debug and test
+                    ...testSchemas.filter( s => 
+                        s.tags.includes( 'production' ) && 
+                        ![ 'debug', 'test' ].includes( s.namespace )
+                    )
+                ]
+            }
+
             const initResult = DeployAdvanced.init( { silent: true } )
             expect( initResult.serverType ).toBe( 'multipleRoutes' )
 
             const startResult = DeployAdvanced.start( {
-                routes,
-                arrayOfSchemas: testSchemas,
+                arrayOfRoutes,
+                objectOfSchemaArrays,
                 envObject: {}
             } )
 

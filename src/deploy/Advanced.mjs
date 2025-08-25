@@ -17,9 +17,9 @@ class DeployAdvanced {
     }
 
 
-    static start( { routes, arrayOfSchemas, envObject, rootUrl, port } ) {
+    static start( { arrayOfRoutes, objectOfSchemaArrays, envObject, rootUrl, port } ) {
         const { routesActivationPayloads } = RemoteServer
-            .prepareRoutesActivationPayloads( { routes, arrayOfSchemas, envObject } )
+            .prepareRoutesActivationPayloads( { arrayOfRoutes, objectOfSchemaArrays, envObject } )
         this.#server
             .start( { routesActivationPayloads, rootUrl, port } )
         return true

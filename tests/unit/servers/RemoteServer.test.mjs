@@ -157,91 +157,128 @@ describe( 'RemoteServer', () => {
     } )
 
     describe( 'prepareRoutesActivationPayloads', () => {
-        const mockRoutes = [
+        const mockArrayOfRoutes = [
             {
-                includeNamespaces: [ 'coingecko' ],
-                excludeNamespaces: [],
-                activateTags: [ 'production' ],
                 routePath: '/api',
                 protocol: 'sse',
                 bearerToken: 'token123'
             },
             {
-                includeNamespaces: [],
-                excludeNamespaces: [ 'debug' ],
-                activateTags: [],
                 routePath: '/test',
                 protocol: 'streamable',
                 bearerToken: null
             }
         ]
 
-        const mockArrayOfSchemas = [
-            { namespace: 'coingecko', name: 'schema1' },
-            { namespace: 'defillama', name: 'schema2' }
-        ]
+        const mockObjectOfSchemaArrays = {
+            '/api': [
+                { namespace: 'coingecko', name: 'schema1' }
+            ],
+            '/test': [
+                { namespace: 'defillama', name: 'schema2' }
+            ]
+        }
 
         const mockEnvObject = { API_KEY: 'test' }
 
         beforeEach( () => {
-            FlowMCP.filterArrayOfSchemas.mockReturnValue( {
-                filteredArrayOfSchemas: [ { namespace: 'coingecko', name: 'filtered' } ]
-            } )
             FlowMCP.prepareActivations.mockReturnValue( {
-                activationPayloads: [ { schema: { namespace: 'coingecko' } } ]
+                activationPayloads: [ { schema: { namespace: 'test' } } ]
             } )
         } )
 
         test( 'should process routes and return activation payloads', () => {
             const result = RemoteServer.prepareRoutesActivationPayloads( {
-                routes: mockRoutes,
-                arrayOfSchemas: mockArrayOfSchemas,
+                arrayOfRoutes: mockArrayOfRoutes,
+                objectOfSchemaArrays: mockObjectOfSchemaArrays,
                 envObject: mockEnvObject
             } )
 
             expect( result.routesActivationPayloads ).toHaveLength( 2 )
-            expect( FlowMCP.filterArrayOfSchemas ).toHaveBeenCalledTimes( 2 )
             expect( FlowMCP.prepareActivations ).toHaveBeenCalledTimes( 2 )
+            
+            // Verify correct schemas were passed for each route
+            expect( FlowMCP.prepareActivations ).toHaveBeenCalledWith( {
+                arrayOfSchemas: [ { namespace: 'coingecko', name: 'schema1' } ],
+                envObject: mockEnvObject
+            } )
+            expect( FlowMCP.prepareActivations ).toHaveBeenCalledWith( {
+                arrayOfSchemas: [ { namespace: 'defillama', name: 'schema2' } ],
+                envObject: mockEnvObject
+            } )
         } )
 
-        test( 'should handle routes with undefined namespace/tag values', () => {
-            const routesWithUndefined = [
+        test( 'should handle single route correctly', () => {
+            const singleRoute = [
                 {
-                    includeNamespaces: undefined,
-                    excludeNamespaces: undefined,
-                    activateTags: undefined,
-                    routePath: '/undefined',
+                    routePath: '/single',
+                    protocol: 'sse',
+                    bearerToken: 'single-token'
+                }
+            ]
+
+            const singleRouteSchemas = {
+                '/single': [
+                    { namespace: 'single', name: 'single-schema' }
+                ]
+            }
+
+            const result = RemoteServer.prepareRoutesActivationPayloads( {
+                arrayOfRoutes: singleRoute,
+                objectOfSchemaArrays: singleRouteSchemas,
+                envObject: mockEnvObject
+            } )
+
+            expect( result.routesActivationPayloads ).toHaveLength( 1 )
+            expect( FlowMCP.prepareActivations ).toHaveBeenCalledWith( {
+                arrayOfSchemas: [ { namespace: 'single', name: 'single-schema' } ],
+                envObject: mockEnvObject
+            } )
+        } )
+
+        test( 'should throw error when no schemas found for routePath', () => {
+            const routesWithMissingSchemas = [
+                {
+                    routePath: '/missing',
                     protocol: 'sse',
                     bearerToken: 'token'
                 }
             ]
 
-            const result = RemoteServer.prepareRoutesActivationPayloads( {
-                routes: routesWithUndefined,
-                arrayOfSchemas: mockArrayOfSchemas,
-                envObject: mockEnvObject
-            } )
-
-            expect( FlowMCP.filterArrayOfSchemas ).toHaveBeenCalledWith( {
-                arrayOfSchemas: mockArrayOfSchemas,
-                includeNamespaces: [],
-                excludeNamespaces: [],
-                activateTags: []
-            } )
-        } )
-
-        test( 'should throw error when no schemas found for route', () => {
-            FlowMCP.filterArrayOfSchemas.mockReturnValue( {
-                filteredArrayOfSchemas: []
-            } )
+            const incompleteSchemaObject = {
+                '/api': [ { namespace: 'existing' } ]
+                // '/missing' is not defined
+            }
 
             expect( () => {
                 RemoteServer.prepareRoutesActivationPayloads( {
-                    routes: mockRoutes,
-                    arrayOfSchemas: mockArrayOfSchemas,
+                    arrayOfRoutes: routesWithMissingSchemas,
+                    objectOfSchemaArrays: incompleteSchemaObject,
                     envObject: mockEnvObject
                 } )
-            } ).toThrow( 'No schemas found for route:' )
+            } ).toThrow( 'No schemas found for routePath: /missing' )
+        } )
+
+        test( 'should throw error when empty schema array for routePath', () => {
+            const routesWithEmptySchemas = [
+                {
+                    routePath: '/empty',
+                    protocol: 'sse',
+                    bearerToken: 'token'
+                }
+            ]
+
+            const emptySchemaObject = {
+                '/empty': []
+            }
+
+            expect( () => {
+                RemoteServer.prepareRoutesActivationPayloads( {
+                    arrayOfRoutes: routesWithEmptySchemas,
+                    objectOfSchemaArrays: emptySchemaObject,
+                    envObject: mockEnvObject
+                } )
+            } ).toThrow( 'No schemas found for routePath: /empty' )
         } )
     } )
 
@@ -382,25 +419,23 @@ describe( 'RemoteServer', () => {
             } )
             
             // Prepare routes
-            FlowMCP.filterArrayOfSchemas.mockReturnValue( {
-                filteredArrayOfSchemas: [ { namespace: 'test' } ]
-            } )
             FlowMCP.prepareActivations.mockReturnValue( {
                 activationPayloads: [ { schema: { namespace: 'test', routes: {} } } ]
             } )
 
-            const routes = [ {
-                includeNamespaces: [ 'test' ],
-                excludeNamespaces: [],
-                activateTags: [],
+            const arrayOfRoutes = [ {
                 routePath: '/integration',
                 protocol: 'sse',
                 bearerToken: 'integration-token'
             } ]
 
+            const objectOfSchemaArrays = {
+                '/integration': [ { namespace: 'test' } ]
+            }
+
             const { routesActivationPayloads } = RemoteServer.prepareRoutesActivationPayloads( {
-                routes,
-                arrayOfSchemas: [ { namespace: 'test' } ],
+                arrayOfRoutes,
+                objectOfSchemaArrays,
                 envObject: {}
             } )
             

@@ -97,26 +97,25 @@ describe( 'DeployAdvanced', () => {
         } )
 
         test( 'should prepare routes activation payloads and start server', () => {
-            const routes = [
+            const arrayOfRoutes = [
                 {
-                    includeNamespaces: [ 'coingecko' ],
-                    excludeNamespaces: [],
-                    activateTags: [ 'production' ],
                     routePath: '/api/v1',
                     protocol: 'sse',
                     bearerToken: 'token123'
                 }
             ]
 
-            const arrayOfSchemas = [
-                { namespace: 'coingecko', name: 'price-api' }
-            ]
+            const objectOfSchemaArrays = {
+                '/api/v1': [
+                    { namespace: 'coingecko', name: 'price-api' }
+                ]
+            }
 
             const envObject = { API_KEY: 'test-key' }
 
             const result = DeployAdvanced.start( {
-                routes,
-                arrayOfSchemas,
+                arrayOfRoutes,
+                objectOfSchemaArrays,
                 envObject,
                 rootUrl: 'https://api.example.com',
                 port: 3000
@@ -124,8 +123,8 @@ describe( 'DeployAdvanced', () => {
 
             expect( result ).toBe( true )
             expect( RemoteServer.prepareRoutesActivationPayloads ).toHaveBeenCalledWith( {
-                routes,
-                arrayOfSchemas,
+                arrayOfRoutes,
+                objectOfSchemaArrays,
                 envObject
             } )
             expect( mockRemoteServer.start ).toHaveBeenCalledWith( {
@@ -140,20 +139,23 @@ describe( 'DeployAdvanced', () => {
         } )
 
         test( 'should start server without optional rootUrl and port', () => {
-            const routes = [
+            const arrayOfRoutes = [
                 {
-                    includeNamespaces: [],
-                    excludeNamespaces: [],
-                    activateTags: [],
                     routePath: '/minimal',
                     protocol: 'streamable',
                     bearerToken: null
                 }
             ]
 
+            const objectOfSchemaArrays = {
+                '/minimal': [
+                    { namespace: 'minimal', name: 'minimal-api' }
+                ]
+            }
+
             const result = DeployAdvanced.start( {
-                routes,
-                arrayOfSchemas: [],
+                arrayOfRoutes,
+                objectOfSchemaArrays,
                 envObject: {}
             } )
 
@@ -170,29 +172,27 @@ describe( 'DeployAdvanced', () => {
         } )
 
         test( 'should handle multiple routes with different protocols', () => {
-            const routes = [
+            const arrayOfRoutes = [
                 {
-                    includeNamespaces: [ 'coingecko' ],
-                    excludeNamespaces: [],
-                    activateTags: [],
                     routePath: '/sse-endpoint',
                     protocol: 'sse',
                     bearerToken: 'sse-token'
                 },
                 {
-                    includeNamespaces: [ 'defillama' ],
-                    excludeNamespaces: [],
-                    activateTags: [ 'production' ],
                     routePath: '/streamable-endpoint',
                     protocol: 'streamable',
                     bearerToken: 'streamable-token'
                 }
             ]
 
-            const arrayOfSchemas = [
-                { namespace: 'coingecko', name: 'price-api' },
-                { namespace: 'defillama', name: 'tvl-api' }
-            ]
+            const objectOfSchemaArrays = {
+                '/sse-endpoint': [
+                    { namespace: 'coingecko', name: 'price-api' }
+                ],
+                '/streamable-endpoint': [
+                    { namespace: 'defillama', name: 'tvl-api' }
+                ]
+            }
 
             const envObject = {
                 COINGECKO_API_KEY: 'cg-key',
@@ -200,24 +200,24 @@ describe( 'DeployAdvanced', () => {
             }
 
             DeployAdvanced.start( {
-                routes,
-                arrayOfSchemas,
+                arrayOfRoutes,
+                objectOfSchemaArrays,
                 envObject,
                 rootUrl: 'https://multi.example.com',
                 port: 8080
             } )
 
             expect( RemoteServer.prepareRoutesActivationPayloads ).toHaveBeenCalledWith( {
-                routes,
-                arrayOfSchemas,
+                arrayOfRoutes,
+                objectOfSchemaArrays,
                 envObject
             } )
         } )
 
         test( 'should handle empty routes array', () => {
             const result = DeployAdvanced.start( {
-                routes: [],
-                arrayOfSchemas: [],
+                arrayOfRoutes: [],
+                objectOfSchemaArrays: {},
                 envObject: {},
                 rootUrl: 'https://empty.example.com',
                 port: 9000
@@ -225,8 +225,8 @@ describe( 'DeployAdvanced', () => {
 
             expect( result ).toBe( true )
             expect( RemoteServer.prepareRoutesActivationPayloads ).toHaveBeenCalledWith( {
-                routes: [],
-                arrayOfSchemas: [],
+                arrayOfRoutes: [],
+                objectOfSchemaArrays: {},
                 envObject: {}
             } )
         } )
@@ -236,15 +236,14 @@ describe( 'DeployAdvanced', () => {
             const customPort = 4000
             
             DeployAdvanced.start( {
-                routes: [ {
-                    includeNamespaces: [],
-                    excludeNamespaces: [],
-                    activateTags: [],
+                arrayOfRoutes: [ {
                     routePath: '/custom',
                     protocol: 'sse',
                     bearerToken: 'custom-token'
                 } ],
-                arrayOfSchemas: [ { namespace: 'custom' } ],
+                objectOfSchemaArrays: { 
+                    '/custom': [ { namespace: 'custom' } ] 
+                },
                 envObject: { CUSTOM_KEY: 'custom-value' },
                 rootUrl: customRootUrl,
                 port: customPort
@@ -268,30 +267,28 @@ describe( 'DeployAdvanced', () => {
             expect( initResult.server ).toBeDefined()
 
             // Step 2: Start with multiple routes
-            const routes = [
+            const arrayOfRoutes = [
                 {
-                    includeNamespaces: [ 'coingecko', 'defillama' ],
-                    excludeNamespaces: [ 'debug' ],
-                    activateTags: [ 'production', 'stable' ],
                     routePath: '/production',
                     protocol: 'sse',
                     bearerToken: 'prod-token'
                 },
                 {
-                    includeNamespaces: [],
-                    excludeNamespaces: [],
-                    activateTags: [ 'development' ],
                     routePath: '/development',
                     protocol: 'streamable',
                     bearerToken: 'dev-token'
                 }
             ]
 
-            const arrayOfSchemas = [
-                { namespace: 'coingecko', name: 'price-api' },
-                { namespace: 'defillama', name: 'tvl-api' },
-                { namespace: 'debug', name: 'debug-tools' }
-            ]
+            const objectOfSchemaArrays = {
+                '/production': [
+                    { namespace: 'coingecko', name: 'price-api' },
+                    { namespace: 'defillama', name: 'tvl-api' }
+                ],
+                '/development': [
+                    { namespace: 'development-tools', name: 'dev-api' }
+                ]
+            }
 
             const envObject = {
                 API_KEY: 'integration-key',
@@ -299,8 +296,8 @@ describe( 'DeployAdvanced', () => {
             }
 
             const startResult = DeployAdvanced.start( {
-                routes,
-                arrayOfSchemas,
+                arrayOfRoutes,
+                objectOfSchemaArrays,
                 envObject,
                 rootUrl: 'https://integration.api.com',
                 port: 5000
@@ -308,8 +305,8 @@ describe( 'DeployAdvanced', () => {
 
             expect( startResult ).toBe( true )
             expect( RemoteServer.prepareRoutesActivationPayloads ).toHaveBeenCalledWith( {
-                routes,
-                arrayOfSchemas,
+                arrayOfRoutes,
+                objectOfSchemaArrays,
                 envObject
             } )
             expect( mockRemoteServer.start ).toHaveBeenCalledWith( {
@@ -330,8 +327,8 @@ describe( 'DeployAdvanced', () => {
 
             // Minimal start
             const startResult = DeployAdvanced.start( {
-                routes: [],
-                arrayOfSchemas: [],
+                arrayOfRoutes: [],
+                objectOfSchemaArrays: {},
                 envObject: {}
             } )
 
@@ -346,8 +343,8 @@ describe( 'DeployAdvanced', () => {
             
             expect( () => {
                 DeployAdvanced.start( {
-                    routes: [],
-                    arrayOfSchemas: [],
+                    arrayOfRoutes: [],
+                    objectOfSchemaArrays: {},
                     envObject: {}
                 } )
             } ).not.toThrow()

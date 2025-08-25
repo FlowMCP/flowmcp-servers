@@ -233,15 +233,16 @@ describe( 'Deploy', () => {
             } )
 
             expect( RemoteServer.prepareRoutesActivationPayloads ).toHaveBeenCalledWith( {
-                routes: [ {
-                    includeNamespaces: [ 'coingecko' ],
-                    excludeNamespaces: [],
-                    activateTags: [ 'production' ],
+                arrayOfRoutes: [ {
                     routePath: '/api',
                     protocol: 'sse',
                     bearerToken: 'secret'
                 } ],
-                arrayOfSchemas,
+                objectOfSchemaArrays: {
+                    '/api': [
+                        { namespace: 'test', name: 'test-schema' }
+                    ]
+                },
                 envObject: { API_KEY: 'test' }
             } )
         } )
@@ -268,12 +269,14 @@ describe( 'Deploy', () => {
             } )
 
             expect( RemoteServer.prepareRoutesActivationPayloads ).toHaveBeenCalledWith( {
-                routes: [
-                    { includeNamespaces: [], excludeNamespaces: [], activateTags: [], routePath: '/api', protocol: 'sse', bearerToken: 'token' },
-                    { includeNamespaces: [], excludeNamespaces: [], activateTags: [], routePath: '/api', protocol: 'streamable', bearerToken: 'token' },
-                    { includeNamespaces: [], excludeNamespaces: [], activateTags: [], routePath: '/api', protocol: 'websocket', bearerToken: 'token' }
+                arrayOfRoutes: [
+                    { routePath: '/api', protocol: 'sse', bearerToken: 'token' },
+                    { routePath: '/api', protocol: 'streamable', bearerToken: 'token' },
+                    { routePath: '/api', protocol: 'websocket', bearerToken: 'token' }
                 ],
-                arrayOfSchemas: [ { namespace: 'test' } ],
+                objectOfSchemaArrays: {
+                    '/api': [ { namespace: 'test', name: 'test-schema' } ]
+                },
                 envObject: {}
             } )
         } )

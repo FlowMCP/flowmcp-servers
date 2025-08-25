@@ -72,19 +72,33 @@ class Deploy {
 
 
     static #remoteServer( { argvs, arrayOfSchemas, envObject } ) {
-        const { silent, transportProtocols } = argvs
+        const { silent, transportProtocols, includeNamespaces, excludeNamespaces, activateTags, routePath, bearerToken } = argvs
+        
+        // Filter schemas for this single route
+        const { filteredArrayOfSchemas } = FlowMCP
+            .filterArrayOfSchemas( { 
+                arrayOfSchemas, 
+                includeNamespaces, 
+                excludeNamespaces, 
+                activateTags 
+            } )
+
         const remoteServer = new RemoteServer( { silent } )
         const app = remoteServer.getApp()
         const mcps = remoteServer.getMcps()
         const events = remoteServer.getEvents()
-        const { includeNamespaces, excludeNamespaces, activateTags, routePath, bearerToken } = argvs
-        const routes = transportProtocols
+        
+        const arrayOfRoutes = transportProtocols
             .map( ( protocol ) => {
-                return { includeNamespaces, excludeNamespaces, activateTags, routePath, protocol, bearerToken }
+                return { routePath, protocol, bearerToken }
             } )
 
+        const objectOfSchemaArrays = {
+            [routePath]: filteredArrayOfSchemas
+        }
+
         const { routesActivationPayloads } = RemoteServer
-            .prepareRoutesActivationPayloads( { routes, arrayOfSchemas, envObject } )
+            .prepareRoutesActivationPayloads( { arrayOfRoutes, objectOfSchemaArrays, envObject } )
         
         this.#serverClass = { 'type': 'remote', 'server': remoteServer, 'routesActivationPayloads': routesActivationPayloads }
 

@@ -73,24 +73,17 @@ class RemoteServer {
     }
 
 
-    static prepareRoutesActivationPayloads( { routes, arrayOfSchemas, envObject } ) {
-        const routesActivationPayloads = routes
+    static prepareRoutesActivationPayloads( { arrayOfRoutes, objectOfSchemaArrays, envObject } ) {
+        const routesActivationPayloads = arrayOfRoutes
             .reduce( ( acc, route ) => {
-                const { includeNamespaces: iN, excludeNamespaces: eN, activateTags: aT, routePath, protocol, bearerToken } = route
-                const { includeNamespaces, excludeNamespaces, activateTags } = [
-                    [ 'includeNamespaces', iN ],
-                    [ 'excludeNamespaces', eN ],
-                    [ 'activateTags'     , aT ]
-                ]
-                    .reduce( ( acc, [ key, value ] ) => {
-                        acc[ key ] = value ?? []
-                        return acc
-                    }, {} )
-        
-                const { filteredArrayOfSchemas } = FlowMCP.filterArrayOfSchemas( { arrayOfSchemas, includeNamespaces, excludeNamespaces, activateTags } )
-                if( filteredArrayOfSchemas.length === 0 ) { throw new Error( `No schemas found for route: ${JSON.stringify( route )}` ) }
+                const { routePath, protocol, bearerToken } = route
+                const arrayOfSchemas = objectOfSchemaArrays[ routePath ]
+                
+                if( !arrayOfSchemas || arrayOfSchemas.length === 0 ) {
+                    throw new Error( `No schemas found for routePath: ${routePath}` )
+                }
                     
-                const { activationPayloads } = FlowMCP.prepareActivations( { arrayOfSchemas: filteredArrayOfSchemas, envObject } )
+                const { activationPayloads } = FlowMCP.prepareActivations( { arrayOfSchemas, envObject } )
                 acc.push( { routePath, protocol, bearerToken, activationPayloads } )
 
                 return acc
