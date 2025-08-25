@@ -7,6 +7,7 @@
   },
   "scripts": {
     "test": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --config=tests/unit/jest.config.mjs",
+    "test:coverage:src": "c8 --reporter=lcov --reporter=text --reports-dir=tests/unit/coverage --include='src/**/*.mjs' --exclude='src/**/*.test.mjs' --exclude='src/**/*.spec.mjs' npm run test",
     "test:parameters": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --config=tests/unit/jest.config.mjs parameters",
     "test:localserver": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --config=tests/unit/jest.config.mjs LocalServer",
     "test:remoteserver": "NODE_OPTIONS=\"--experimental-vm-modules\" jest --config=tests/unit/jest.config.mjs RemoteServer",
@@ -29,6 +30,7 @@
     "@babel/preset-env": "^7.27.2",
     "@modelcontextprotocol/inspector": "^0.14.3",
     "babel-jest": "^30.0.2",
+    "c8": "^10.1.3",
     "jest": "^30.0.3",
     "schemaimporter": "github:flowmcp/flowMCP-schemas#f386c717673addd796cc50b6142f379e9eb111d1"
   }
