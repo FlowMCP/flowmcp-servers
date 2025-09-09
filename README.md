@@ -67,10 +67,9 @@ The `RemoteServer` provides HTTP-based access to FlowMCP schemas using various p
 
 ### ✅ Features
 
-* Supports 3 transport protocols:
+* Supports 2 transport protocols:
 
-  * `statelessStreamable`
-  * `stickyStreamable`
+  * `streamable` (HTTP with stateless communication)
   * `sse` (Server-Sent Events)
 * Optional Bearer token authentication
 * Multiple routes and schemas can be activated
@@ -84,20 +83,28 @@ import { FlowMCP } from 'flowmcp'
 
 const remoteServer = new RemoteServer({ silent: true })
 
-const { activationPayloads } = FlowMCP.prepareActivations({
-  arrayOfSchemas: [...],
-  envObject: process.env,
-  activateTags: ['example.route']
+// Define routes with their configuration
+const arrayOfRoutes = [
+  {
+    routePath: '/api',
+    protocol: 'sse',
+    bearerToken: 'mysecrettoken'
+  }
+]
+
+// Pre-assign schemas to routes
+const objectOfSchemaArrays = {
+  '/api': [...] // Your schemas here
+}
+
+// Prepare route activation payloads
+const { routesActivationPayloads } = RemoteServer.prepareRoutesActivationPayloads({
+  arrayOfRoutes,
+  objectOfSchemaArrays,
+  envObject: process.env
 })
 
-await remoteServer.addActivationPayloads({
-  routePath: '/api',
-  activationPayloads,
-  transportProtocols: ['sse', 'stickyStreamable'],
-  bearer: 'mysecrettoken'
-})
-
-remoteServer.start()
+remoteServer.start({ routesActivationPayloads })
 ```
 
 ### 🔧 Configuration
@@ -113,11 +120,10 @@ remoteServer.setConfig({
 
 ### 📡 Supported Transport Protocols
 
-| Protocol              | Description                               |
-| --------------------- | ----------------------------------------- |
-| `sse`                 | Server-Sent Events, persistent connection |
-| `stickyStreamable`    | HTTP with reusable sessions (via headers) |
-| `statelessStreamable` | Stateless POST-based HTTP communication   |
+| Protocol      | Description                             |
+| ------------- | --------------------------------------- |
+| `sse`         | Server-Sent Events, persistent connection |
+| `streamable`  | Stateless POST-based HTTP communication   |
 
 ---
 
@@ -136,12 +142,11 @@ The `DeployAdvanced` class enables deployment of multiple routes with different 
 
 ```js
 import { DeployAdvanced } from 'flowmcp-server'
-import { FlowMCP } from 'flowmcp'
 
 // Initialize the advanced deployment
 DeployAdvanced.init({ silent: true })
 
-// Define routes (simplified - no filtering logic)
+// Define routes with their configuration
 const arrayOfRoutes = [
   {
     routePath: '/crypto',
@@ -234,5 +239,5 @@ Invalid or missing tokens will result in `401 Unauthorized` or `403 Forbidden` r
 
 ## 📌 Compatibility
 
-* **FlowMCP Server version**: `1.2.0+`
+* **FlowMCP Server version**: `1.5.0`
 * **FlowMCP Schema spec version**: `1.2.2`

@@ -1,32 +1,38 @@
 import { RemoteServer } from './src/index.mjs'
-import { SchemaImporter } from 'schema-importer'
+import { SchemaImporter } from 'schemaimporter'
 import { FlowMCP } from 'flowmcp'
 
 
-const schemaFilePaths = await SchemaImporter
-    .get( { 
-        'onlyWithoutImports': true,
-        'withMetaData': true, 
-        'withSchema': true 
-    } )
-const arrayOfSchemas = schemaFilePaths
-    .filter( ( { schema: { requiredServerParams } } ) => requiredServerParams.length === 0 )    
-    .map( ( { schema } ) => schema )
-const { activationPayloads } = FlowMCP
-    .prepareActivations( { 
-        arrayOfSchemas, 
-        envObject: {}, 
-        activateTags: [],
-        includeNamespaces: [],
-        excludeNamespaces: []
+const arrayOfSchemas = await SchemaImporter
+    .loadFromFolder( {
+        excludeSchemasWithImports: true,
+        excludeSchemasWithRequiredServerParams: true,
+        addAdditionalMetaData: true,
+        outputType: 'onlySchema'
     } )
 
+// Define routes with their configuration
+const arrayOfRoutes = [
+    {
+        routePath: '/stateless',
+        protocol: 'streamable',
+        bearerToken: null
+    }
+]
+
+// Pre-assign schemas to routes
+const objectOfSchemaArrays = {
+    '/stateless': arrayOfSchemas
+}
+
 const remoteServer = new RemoteServer( { silent: true } )
-remoteServer
-    .addActivationPayloads( { 
-        activationPayloads, 
-        routePath: '/stateless', 
-       // transportProtocols: [ 'statelessStreamable' ] 
-    } )
-remoteServer.start()
+
+// Prepare route activation payloads
+const { routesActivationPayloads } = RemoteServer.prepareRoutesActivationPayloads( {
+    arrayOfRoutes,
+    objectOfSchemaArrays,
+    envObject: {}
+} )
+
+remoteServer.start( { routesActivationPayloads } )
 

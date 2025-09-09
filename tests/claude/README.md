@@ -8,7 +8,7 @@
     "FlowMCP": {
       "command": "node",
       "args": [
-        "..../tests/claude/start.mjs",
+        "/absolute/path/to/your/project/tests/claude/start.mjs",
         "--includeNamespaces=",
         "--excludeNamespaces=",
         "--activateTags=",
