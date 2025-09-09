@@ -72,7 +72,7 @@ class Deploy {
 
 
     static #remoteServer( { argvs, arrayOfSchemas, envObject } ) {
-        const { silent, transportProtocols, includeNamespaces, excludeNamespaces, activateTags, routePath, bearerToken } = argvs
+        const { silent, transportProtocols, includeNamespaces, excludeNamespaces, activateTags, routePath } = argvs
         
         // Filter schemas for this single route
         const { filteredArrayOfSchemas } = FlowMCP
@@ -90,7 +90,7 @@ class Deploy {
         
         const arrayOfRoutes = transportProtocols
             .map( ( protocol ) => {
-                return { routePath, protocol, bearerToken }
+                return { routePath, protocol }
             } )
 
         const objectOfSchemaArrays = {

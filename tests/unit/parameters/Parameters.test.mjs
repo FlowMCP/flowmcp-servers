@@ -29,7 +29,6 @@ describe( 'Parameters', () => {
             const config = Parameters.getArgvConfig( { type: 'remote' } )
             
             expect( config ).toEqual( expect.arrayContaining( [
-                [ '--bearerToken=', 'bearerToken', 'string', null ],
                 [ '--port=', 'port', 'number', 8080 ],
                 [ '--rootUrl=', 'rootUrl', 'string', 'http://localhost' ],
                 [ '--silent=', 'silent', 'boolean', false ],
@@ -115,7 +114,6 @@ describe( 'Parameters', () => {
                 'node', 'script.mjs', 
                 '--serverType=remote',
                 '--port=3000',
-                '--bearerToken=test123',
                 '--rootUrl=https://example.com'
             ]
             const mockProcessEnv = {}
@@ -127,7 +125,6 @@ describe( 'Parameters', () => {
             
             expect( argvs.serverType ).toBe( 'remote' )
             expect( argvs.port ).toBe( 3000 )
-            expect( argvs.bearerToken ).toBe( 'test123' )
             expect( argvs.rootUrl ).toBe( 'https://example.com' )
         } )
 

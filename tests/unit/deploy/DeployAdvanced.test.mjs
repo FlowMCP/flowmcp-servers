@@ -101,7 +101,6 @@ describe( 'DeployAdvanced', () => {
                 {
                     routePath: '/api/v1',
                     protocol: 'sse',
-                    bearerToken: 'token123'
                 }
             ]
 
@@ -143,7 +142,6 @@ describe( 'DeployAdvanced', () => {
                 {
                     routePath: '/minimal',
                     protocol: 'streamable',
-                    bearerToken: null
                 }
             ]
 
@@ -176,12 +174,10 @@ describe( 'DeployAdvanced', () => {
                 {
                     routePath: '/sse-endpoint',
                     protocol: 'sse',
-                    bearerToken: 'sse-token'
                 },
                 {
                     routePath: '/streamable-endpoint',
                     protocol: 'streamable',
-                    bearerToken: 'streamable-token'
                 }
             ]
 
@@ -239,7 +235,6 @@ describe( 'DeployAdvanced', () => {
                 arrayOfRoutes: [ {
                     routePath: '/custom',
                     protocol: 'sse',
-                    bearerToken: 'custom-token'
                 } ],
                 objectOfSchemaArrays: { 
                     '/custom': [ { namespace: 'custom' } ] 
@@ -271,12 +266,10 @@ describe( 'DeployAdvanced', () => {
                 {
                     routePath: '/production',
                     protocol: 'sse',
-                    bearerToken: 'prod-token'
                 },
                 {
                     routePath: '/development',
                     protocol: 'streamable',
-                    bearerToken: 'dev-token'
                 }
             ]
 

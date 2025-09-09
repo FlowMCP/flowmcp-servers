@@ -22,7 +22,6 @@ class Parameters {
         ]
 
         const remoteServerParameters = [
-            [ '--bearerToken='       , 'bearerToken'       , 'string' , null                      ],
             [ '--port='              , 'port'              , 'number' , 8080                      ],
             [ '--rootUrl='           , 'rootUrl'           , 'string' , 'http://localhost'        ],
             [ '--silent='            , 'silent'            , 'boolean', false                     ],

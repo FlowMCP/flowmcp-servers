@@ -15,7 +15,6 @@ class RemoteServer {
     #silent
     #config
     #events
-    #routeAuth = {}
 
 
     constructor( { silent = false } ) {
@@ -37,7 +36,6 @@ class RemoteServer {
 
         this.#app = express()
         this.#app.use( express.json() )
-        this.#app.use( this.#bearerAuthMiddleware.bind( this ) )
     }
 
 
@@ -76,7 +74,7 @@ class RemoteServer {
     static prepareRoutesActivationPayloads( { arrayOfRoutes, objectOfSchemaArrays, envObject } ) {
         const routesActivationPayloads = arrayOfRoutes
             .reduce( ( acc, route ) => {
-                const { routePath, protocol, bearerToken } = route
+                const { routePath, protocol } = route
                 const arrayOfSchemas = objectOfSchemaArrays[ routePath ]
                 
                 if( !arrayOfSchemas || arrayOfSchemas.length === 0 ) {
@@ -84,7 +82,7 @@ class RemoteServer {
                 }
                     
                 const { activationPayloads } = FlowMCP.prepareActivations( { arrayOfSchemas, envObject } )
-                acc.push( { routePath, protocol, bearerToken, activationPayloads } )
+                acc.push( { routePath, protocol, activationPayloads } )
 
                 return acc
             }, [] )
@@ -107,12 +105,9 @@ class RemoteServer {
         }
 
         routesActivationPayloads
-            .forEach( ( { includeNamespaces, routePath, protocol, bearerToken, activationPayloads } ) => {
+            .forEach( ( { includeNamespaces, routePath, protocol, activationPayloads } ) => {
                 this.#mcps[ routePath ] = { sessionIds: {}, activationPayloads }
 
-                if( typeof bearerToken === 'string' && bearerToken !== '' ) {
-                    this.#routeAuth[ routePath ] = bearerToken.toLowerCase()
-                }
 
                 this.#initRoute( { protocol, routePath } )
             } )
@@ -123,11 +118,8 @@ class RemoteServer {
                 console.log( '📜 Available Routes:' )
 
                 routesActivationPayloads
-                    .forEach( ( { routePath, protocol, bearerToken, activationPayloads } ) => {
+                    .forEach( ( { routePath, protocol, activationPayloads } ) => {
                         const suffix = this.#config.suffixes[ protocol ] || ''
-                        const tokenMsg = ( typeof bearerToken === 'string' && bearerToken !== '' )
-                            ? `Authorization:  Bearer ${bearerToken}`
-                            : 'Authorization:  '
 
                         const schemaCount = ( activationPayloads || [] ).length
                         const toolsCount = activationPayloads
@@ -141,7 +133,6 @@ class RemoteServer {
 
                         console.log( `- URL:            ${finalRootUrl}:${finalPort}${routePath}${suffix}` )
                         console.log( `  Transport Type: ${protocol}` )
-                        console.log( `  ${tokenMsg}` )
                         console.log( `  Namespaces:     ${n.join( ', ' )}` )
                         console.log( `  Schemas:        ${schemaCount}, Tools: ${toolsCount}` )
 
@@ -157,25 +148,11 @@ class RemoteServer {
         const suffix = this.#config.suffixes[ protocol ] || '/sse'
         const fullPath = `${routePath}${suffix}`
 
-        const authMiddleware = ( req, res, next ) => {
-            const token = this.#routeAuth[ routePath ]
-
-            if( !token ) { return next() }
-
-            const auth = req.headers[ 'authorization' ]
-            if( !auth || !auth.toLowerCase().startsWith( 'bearer ' ) || auth.split( ' ' )[ 1 ]?.toLowerCase() !== token ) {
-                res
-                    .status( 403 )
-                    .json( { error: 'Forbidden: Invalid or missing bearer token' } )
-            } else {
-                next()
-            }
-        }
 
         if( protocol === 'sse' ) {
             const messagesPath = `${routePath}/post`
 
-            this.#app.get( fullPath, authMiddleware, async ( req, res ) => {
+            this.#app.get( fullPath, async ( req, res ) => {
                 const server = new McpServer( this.#config.serverDescription )
                 this.#mcps[ routePath ].activationPayloads
                     .forEach( ( { schema, serverParams } ) => {
@@ -215,7 +192,7 @@ class RemoteServer {
                 await server.connect( transport )
             } )
 
-            this.#app.post( messagesPath, authMiddleware, async ( req, res ) => {
+            this.#app.post( messagesPath, async ( req, res ) => {
                 const { sessionId } = req.query
                 const entry = this.#mcps[ routePath ].sessionIds[ sessionId ]
 
@@ -241,7 +218,7 @@ class RemoteServer {
         }
 
         if( protocol === 'streamable' ) {
-            this.#app.post( fullPath, authMiddleware, async ( req, res ) => {
+            this.#app.post( fullPath, async ( req, res ) => {
                 const server = new McpServer( this.#config.serverDescription )
 
                 this.#mcps[ routePath ].activationPayloads
@@ -280,9 +257,6 @@ class RemoteServer {
     }
 
 
-    #bearerAuthMiddleware( req, res, next ) {
-        next()
-    }
 
 
     #sendEvent( { channelName, message } ) {
@@ -315,7 +289,7 @@ class RemoteServer {
 
         routesActivationPayloads
             .forEach( ( entry, index ) => {
-                const { routePath, protocol, bearerToken, activationPayloads } = entry
+                const { routePath, protocol, activationPayloads } = entry
                 const specs = [
                     [ 'routePath', routePath, 'string', null ],
                     [ 'protocol', protocol, 'string', [ 'sse', 'streamable' ] ],
@@ -335,9 +309,6 @@ class RemoteServer {
                         }
                     } )
 
-                if( bearerToken !== null && typeof bearerToken !== 'string' ) {
-                    struct[ 'messages' ].push( `routesActivationPayloads[${index}].bearerToken: Must be a string or null` )
-                }
             } )
 
         struct[ 'status' ] = struct[ 'messages' ].length === 0

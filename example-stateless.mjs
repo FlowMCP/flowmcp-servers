@@ -15,8 +15,7 @@ const arrayOfSchemas = await SchemaImporter
 const arrayOfRoutes = [
     {
         routePath: '/stateless',
-        protocol: 'streamable',
-        bearerToken: null
+        protocol: 'streamable'
     }
 ]
 

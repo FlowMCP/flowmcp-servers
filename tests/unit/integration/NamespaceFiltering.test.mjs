@@ -435,12 +435,10 @@ describe( 'Namespace and Tag Filtering Integration', () => {
                 {
                     routePath: '/crypto',
                     protocol: 'sse',
-                    bearerToken: 'crypto-token'
                 },
                 {
                     routePath: '/production',
                     protocol: 'streamable',
-                    bearerToken: 'prod-token'
                 }
             ]
 

@@ -30,7 +30,7 @@ function getEnvObject( { source, envPath } ) {
 const config = {
     'silent': false,
     'envPath': './../../.env',
-    'routes': [ { includeNamespaces: [], routePath: '/one', protocol: 'sse', bearerToken: null } ]
+    'routes': [ { includeNamespaces: [], routePath: '/one', protocol: 'sse' } ]
 }
 
 const { silent, envPath, routes } = config

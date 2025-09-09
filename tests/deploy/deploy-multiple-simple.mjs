@@ -37,7 +37,6 @@ const config = {
             activateTags: [],
             routePath: '/two',
             protocol: 'sse',
-            bearerToken: null
         }
     ]
 }

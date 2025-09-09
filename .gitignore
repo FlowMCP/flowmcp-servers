@@ -1,2 +1,8 @@
 node_modules
 old
+
+# Test Coverage (nicht im Repo speichern)
+coverage/
+tests/unit/coverage/
+*.lcov
+.nyc_output/

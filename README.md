@@ -15,7 +15,6 @@ This repository provides two server implementations compatible with the **FlowMC
 - [Simple Deployment](#-simple-deployment)
 - [Advanced Multi-Route Deployment](#-advanced-multi-route-deployment)
 - [Advanced Server Access](#-advanced-server-access)
-- [Authentication (Optional)](#-authentication-optional)
 - [Compatibility](#-compatibility)
 
 ---
@@ -84,7 +83,6 @@ The `RemoteServer` provides HTTP-based access to FlowMCP schemas using various p
 
   * `streamable` (HTTP with stateless communication)
   * `sse` (Server-Sent Events)
-* Optional Bearer token authentication
 * Multiple routes and schemas can be activated
 * Easily configurable
 
@@ -101,7 +99,6 @@ const arrayOfRoutes = [
   {
     routePath: '/api',
     protocol: 'sse',
-    bearerToken: 'mysecrettoken'
   }
 ]
 
@@ -193,12 +190,10 @@ const arrayOfRoutes = [
   {
     routePath: '/crypto',
     protocol: 'sse', 
-    bearerToken: 'crypto-secret'
   },
   {
     routePath: '/admin',
     protocol: 'streamable',
-    bearerToken: 'admin-secret'
   }
 ]
 
@@ -255,7 +250,6 @@ const routes = [{
   activateTags: ['production'],
   routePath: '/crypto',
   protocol: 'sse',
-  bearerToken: 'token'
 }]
 
 DeployAdvanced.start({
@@ -270,7 +264,6 @@ DeployAdvanced.start({
 const arrayOfRoutes = [{
   routePath: '/crypto',      // ✅ Simplified route
   protocol: 'sse',
-  bearerToken: 'token'
 }]
 
 const objectOfSchemaArrays = {
@@ -306,18 +299,6 @@ Both `Deploy.init()` and `DeployAdvanced.init()` return important objects that a
 - **Health Checks**: Add custom endpoints for monitoring
 - **Configuration**: Modify server settings via `server` (DeployAdvanced)
 - **CLI Integration**: Access parsed arguments via `argvs` (Deploy)
-
----
-
-## 🔐 Authentication (Optional)
-
-When the `bearer` option is set, incoming requests must include the following header:
-
-```
-Authorization: Bearer <TOKEN>
-```
-
-Invalid or missing tokens will result in `401 Unauthorized` or `403 Forbidden` responses.
 
 ---
 

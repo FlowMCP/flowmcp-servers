@@ -30,7 +30,6 @@ const { argvs, envObject } = Parameters
 
 const { 
     activateTags,
-    bearerToken,
     excludeNamespaces,
     includeNamespaces,
     routePath,
@@ -59,7 +58,7 @@ remoteServer
         activationPayloads,
         routePath,
         transportProtocols,
-        bearerToken 
+ 
     } )
 remoteServer.start()
 console.log( 'Remote Server started successfully.' )

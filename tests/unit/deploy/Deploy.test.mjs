@@ -189,7 +189,6 @@ describe( 'Deploy', () => {
                     excludeNamespaces: [],
                     activateTags: [],
                     routePath: '/api',
-                    bearerToken: 'token123',
                     transportProtocols: [ 'sse', 'streamable' ],
                     silent: false
                 },
@@ -217,7 +216,6 @@ describe( 'Deploy', () => {
                     excludeNamespaces: [],
                     activateTags: [ 'production' ],
                     routePath: '/api',
-                    bearerToken: 'secret',
                     transportProtocols: [ 'sse' ],
                     silent: true
                 },
@@ -235,8 +233,7 @@ describe( 'Deploy', () => {
             expect( RemoteServer.prepareRoutesActivationPayloads ).toHaveBeenCalledWith( {
                 arrayOfRoutes: [ {
                     routePath: '/api',
-                    protocol: 'sse',
-                    bearerToken: 'secret'
+                    protocol: 'sse'
                 } ],
                 objectOfSchemaArrays: {
                     '/api': [
@@ -255,7 +252,6 @@ describe( 'Deploy', () => {
                     excludeNamespaces: [],
                     activateTags: [],
                     routePath: '/api',
-                    bearerToken: 'token',
                     transportProtocols: [ 'sse', 'streamable', 'websocket' ],
                     silent: false
                 },
@@ -270,9 +266,9 @@ describe( 'Deploy', () => {
 
             expect( RemoteServer.prepareRoutesActivationPayloads ).toHaveBeenCalledWith( {
                 arrayOfRoutes: [
-                    { routePath: '/api', protocol: 'sse', bearerToken: 'token' },
-                    { routePath: '/api', protocol: 'streamable', bearerToken: 'token' },
-                    { routePath: '/api', protocol: 'websocket', bearerToken: 'token' }
+                    { routePath: '/api', protocol: 'sse' },
+                    { routePath: '/api', protocol: 'streamable' },
+                    { routePath: '/api', protocol: 'websocket' }
                 ],
                 objectOfSchemaArrays: {
                     '/api': [ { namespace: 'test', name: 'test-schema' } ]
@@ -461,7 +457,6 @@ describe( 'Deploy', () => {
                     excludeNamespaces: [],
                     activateTags: [],
                     routePath: '/flowmcp',
-                    bearerToken: 'integration-token',
                     transportProtocols: [ 'sse', 'streamable' ],
                     silent: true
                 },
