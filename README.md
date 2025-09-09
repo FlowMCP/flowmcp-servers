@@ -7,6 +7,30 @@ This repository provides two server implementations compatible with the **FlowMC
 
 ---
 
+## 📖 Table of Contents
+
+- [Quickstart](#quickstart)
+- [🖥 Local Server](#-local-server)
+  - [✅ Features](#-features)
+  - [🚀 Example Usage](#-example-usage)
+  - [🔧 Configuration](#-configuration)
+- [🌐 Remote Server](#-remote-server)
+  - [✅ Features](#-features-1)
+  - [🚀 Example Usage](#-example-usage-1)  
+  - [🔧 Configuration](#-configuration-1)
+  - [📡 Supported Transport Protocols](#-supported-transport-protocols)
+- [🚀 Simple Deployment](#-simple-deployment)
+- [🚀 Advanced Multi-Route Deployment](#-advanced-multi-route-deployment)
+  - [🌟 Key Features](#-key-features)
+  - [📝 Example Usage](#-example-usage-2)
+  - [🔄 Migration from v1.3.x](#-migration-from-v13x)
+- [🔧 Advanced Server Access](#-advanced-server-access)
+  - [💡 Use Cases](#-use-cases)
+- [🔐 Authentication (Optional)](#-authentication-optional)
+- [📌 Compatibility](#-compatibility)
+
+---
+
 ## Quickstart 
 
 Deploy with DigitalOcean
