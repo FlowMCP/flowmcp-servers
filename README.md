@@ -127,6 +127,35 @@ remoteServer.setConfig({
 
 ---
 
+## 🚀 Simple Deployment
+
+The `Deploy` class provides a quick way to set up servers with command-line parameter support.
+
+### 📝 Example Usage
+
+```js
+import { Deploy } from 'flowmcp-server'
+
+// Initialize with command-line arguments and schemas
+const { serverType, app, mcps, events, argvs } = Deploy.init({
+  argv: process.argv,
+  processEnv: process.env,
+  arrayOfSchemas: [...] // Your schemas
+})
+
+// Access parsed command-line arguments
+console.log('Server Type:', serverType)     // 'local' or 'remote'
+console.log('Parsed Args:', argvs)          // All CLI parameters
+console.log('Express App:', app)            // Express.js app (remote) or McpServer (local)
+console.log('MCPs:', mcps)                  // null for local, sessions object for remote
+console.log('Events:', events)              // null for local, event emitter for remote
+
+// Start the configured server
+await Deploy.start()
+```
+
+---
+
 ## 🚀 Advanced Multi-Route Deployment
 
 The `DeployAdvanced` class enables deployment of multiple routes with different schemas and protocols. Perfect for complex API setups.
@@ -144,7 +173,7 @@ The `DeployAdvanced` class enables deployment of multiple routes with different 
 import { DeployAdvanced } from 'flowmcp-server'
 
 // Initialize the advanced deployment
-DeployAdvanced.init({ silent: true })
+const { serverType, app, mcps, events, server } = DeployAdvanced.init({ silent: true })
 
 // Define routes with their configuration
 const arrayOfRoutes = [
@@ -182,6 +211,25 @@ DeployAdvanced.start({
   rootUrl: 'https://api.example.com',
   port: 8080
 })
+
+// Optional: Access server internals for advanced customization
+console.log('Server Type:', serverType)  // 'multipleRoutes'
+
+// Express.js app - add custom middleware, routes, etc.
+app.use('/health', (req, res) => res.json({ status: 'healthy' }))
+
+// Monitor MCP sessions - track active connections per route
+Object.entries(mcps).forEach(([route, { sessionIds }]) => {
+  console.log(`Route ${route}: ${Object.keys(sessionIds).length} active sessions`)
+})
+
+// Event monitoring - listen to server events
+events.on('sessionCreated', ({ protocol, routePath, sessionId }) => {
+  console.log(`New ${protocol} session: ${sessionId} on ${routePath}`)
+})
+
+// Direct server access - modify configuration, add routes, etc.
+server.setConfig({ overwrite: { port: 9000 } })
 ```
 
 ### 🔄 Migration from v1.3.x
@@ -222,6 +270,29 @@ DeployAdvanced.start({
   envObject: process.env
 })
 ```
+
+---
+
+## 🔧 Advanced Server Access
+
+Both `Deploy.init()` and `DeployAdvanced.init()` return important objects that allow deep customization:
+
+| Object | Deploy (Simple) | DeployAdvanced | Description |
+|--------|----------------|----------------|-------------|
+| `serverType` | `'local'` or `'remote'` | `'multipleRoutes'` | Server configuration type |
+| `app` | Express app or McpServer | Express app | Server application instance |
+| `mcps` | `null` (local) or sessions object | Sessions object | Active MCP connections per route |
+| `events` | `null` (local) or EventEmitter | EventEmitter | Event system for monitoring |
+| `argvs` | Parsed CLI arguments | `null` | Command-line parameters (Deploy only) |
+| `server` | Not available | RemoteServer instance | Direct server access (DeployAdvanced only) |
+
+### 💡 Use Cases
+
+- **Custom Middleware**: Add authentication, logging, rate limiting via `app`
+- **Connection Monitoring**: Track active sessions via `mcps` and `events`  
+- **Health Checks**: Add custom endpoints for monitoring
+- **Configuration**: Modify server settings via `server` (DeployAdvanced)
+- **CLI Integration**: Access parsed arguments via `argvs` (Deploy)
 
 ---
 
