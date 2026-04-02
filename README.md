@@ -25,7 +25,7 @@ Deploy with DigitalOcean
 
 > An autodeploy is only available for a stateless server (streamableHTTP) . 
 
-[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/flowmcp/flowmcp-servers/tree/main)
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/FlowMCP/flowmcp-servers/tree/main)
 
 
 
