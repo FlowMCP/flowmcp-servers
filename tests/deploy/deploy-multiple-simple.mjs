@@ -1,4 +1,4 @@
-import { SchemaImporter } from 'schemaimporter'
+import { SchemaImporter } from '../fixtures/SchemaImporter.mjs'
 import { DeployAdvanced } from '../../src/index.mjs'
 import fs from 'fs'
 

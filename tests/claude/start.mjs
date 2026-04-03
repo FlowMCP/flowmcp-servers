@@ -1,4 +1,4 @@
-import { SchemaImporter } from 'schemaimporter'
+import { SchemaImporter } from '../fixtures/SchemaImporter.mjs'
 import { Deploy } from '../../src/index.mjs'
 
 

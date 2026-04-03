@@ -1,6 +1,6 @@
 import { Parameters } from './../../src/index.mjs'
 import { RemoteServer } from './../../src/index.mjs'
-import { SchemaImporter } from 'schemaimporter'
+import { SchemaImporter } from '../fixtures/SchemaImporter.mjs'
 import { FlowMCP } from 'flowmcp'
 
 
