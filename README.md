@@ -1,3 +1,23 @@
+> **⚠️ DEPRECATED — this repository is archived and frozen.**
+>
+> `flowmcp-servers` is bound to the **v1 FlowMCP API** (`prepareActivations`,
+> `filterArrayOfSchemas`, `activateServerTools`), which was **removed in
+> flowmcp-core 4.0.0** — the core is now v4-only. This repository is no longer
+> maintained and will receive no further features or fixes.
+>
+> **Existing installs keep working.** Consumers pin flowmcp-core by commit SHA;
+> those commits stay reachable in history, so any install pinned to a pre-4.0.0
+> core continues to run unchanged.
+>
+> **Successor — integrate FlowMCP v4 directly:**
+> - use the `flowmcp-core` v4 facade (`FlowMCP.loadSchema` + `FlowMCP.prepareServerTool`)
+>   to build an MCP server in-process, or
+> - use the `flowmcp` CLI `serve` command to serve schema folders directly.
+>
+> See the FlowMCP documentation for the v4 integration guides.
+
+---
+
 # FlowMCP Server
 
 This repository provides two server implementations compatible with the **FlowMCP framework**:

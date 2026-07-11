@@ -21,7 +21,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "DEPRECATED — bound to the removed v1 FlowMCP API; use the flowmcp-core v4 facade or the flowmcp CLI serve command instead.",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.2",
     "flowmcp": "github:flowmcp/flowmcp#91ccaf8dc7b61b5df3cfa780699cbf4973cd3cbd"
