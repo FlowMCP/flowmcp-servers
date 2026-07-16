@@ -12,7 +12,9 @@
 > **Successor — integrate FlowMCP v4 directly:**
 > - use the `flowmcp-core` v4 facade (`FlowMCP.loadSchema` + `FlowMCP.prepareServerTool`)
 >   to build an MCP server in-process, or
-> - use the `flowmcp` CLI `serve` command to serve schema folders directly.
+> - use [`mcp-agent-server`](https://github.com/FlowMCP/mcp-agent-server) for a ready-made MCP server.
+>
+> (The `flowmcp` CLI no longer ships a `run`/`serve` command — the stdio MCP server was removed.)
 >
 > See the FlowMCP documentation for the v4 integration guides.
 
